@@ -1,2 +1,2 @@
 
-cd bin & LearnD3D12.exe &cd ..
+cd bin & LearnDX12.exe &cd ..

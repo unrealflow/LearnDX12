@@ -13,7 +13,7 @@ endif()
 set(LearnDX12Project ${PROJECT_SOURCE_DIR})
 set(INCLUDE ${LearnDX12Project}/include ${LearnDX12Project}/base)
 include_directories(${INCLUDE})
-add_definitions(-DVK_EXAMPLE_DATA_DIR=\"${CMAKE_SOURCE_DIR}/bin/\")
+add_definitions(-DSK_DATA_DIR=L\"${CMAKE_SOURCE_DIR}/data/\")
 link_directories(${LearnDX12Project}/lib)
 
 
@@ -27,6 +27,7 @@ ENDIF( CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 link_libraries(d3d12.lib)
 link_libraries(dxgi.lib)
+link_libraries(d3dcompiler.lib)
 # link_libraries(assimp.lib)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${LearnDX12Project}/bin)   

@@ -3,6 +3,7 @@
 #include "SkWin32.h"
 #include "SkPipeline.h"
 #include "SkCmd.h"
+#include "SkMesh.h"
 class SkApp
 {
 protected:
@@ -14,11 +15,11 @@ protected:
     {
         win.Init(base);
         win.InitWindow();
-        pipeline.Init(base);
-        pipeline.Setup();
+        pipeline.Init(base); 
         cmd.Init(base);
-        cmd.BuildCmdLists();
+        Setup();
     } 
+    void Setup();
     void Loop()
     {
         MSG msg = {};
@@ -39,7 +40,7 @@ protected:
     }
 
 public:
-    SkApp(uint32_t width, uint32_t height, string winName)
+    SkApp(uint32_t width, uint32_t height, std::string winName)
     {
         base = new SkBase();
         base->width = width;

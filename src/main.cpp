@@ -16,9 +16,9 @@ int main()
     {
         skApp.Run();
     }
-    catch (const exception &e)
+    catch (const std::exception &e)
     {
-        cerr << e.what() << '\n';
+        std::cerr << e.what() << '\n';
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

@@ -2,14 +2,13 @@
 #include "SkTools.h"
 
 using Microsoft::WRL::ComPtr;
-using namespace std;
 
 class SkBase
 {
 public:
     uint32_t width;
     uint32_t height;
-    string name;
+    std::string name;
     HWND hwnd = nullptr;
     HINSTANCE hInstance;
     int iCmdShow;
@@ -17,7 +16,7 @@ public:
     uint32_t imageIndex;
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> device;
-    vector<ComPtr<ID3D12Resource>> renderTargets;
+    std::vector<ComPtr<ID3D12Resource>> renderTargets;
     ComPtr<ID3D12CommandAllocator> cmdPool;
     ComPtr<ID3D12CommandQueue> cmdQueue;
     ComPtr<ID3D12DescriptorHeap> desHeap;
@@ -28,6 +27,9 @@ public:
     ComPtr<ID3D12Fence> fence;
     UINT64 fenceValue;
     bool useWarpDevice = false;
+
+    ComPtr<ID3D12RootSignature> rootSignature;
+
     HWND GetHwnd()
     {
         if (hwnd == nullptr)
