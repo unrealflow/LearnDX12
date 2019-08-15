@@ -1,0 +1,5 @@
+﻿file(GLOB BASE_SRC "*.cpp" "*.c")
+file(GLOB BASE_HEADERS "*.hpp" "*.h")
+# include_directories(${INCLUDE})
+include_directories(${LearnDX12Project}/include)
+add_library(base STATIC ${BASE_SRC})
