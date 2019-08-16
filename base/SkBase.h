@@ -19,7 +19,10 @@ public:
     std::vector<ComPtr<ID3D12Resource>> renderTargets;
     ComPtr<ID3D12CommandAllocator> cmdPool;
     ComPtr<ID3D12CommandQueue> cmdQueue;
-    ComPtr<ID3D12DescriptorHeap> desHeap;
+    //render target view (RTV) descriptor heap
+    ComPtr<ID3D12DescriptorHeap> rtvHeap;
+    //shader resource view (SRV) heap
+    ComPtr<ID3D12DescriptorHeap> srvHeap;
     uint32_t desSize;
     ComPtr<ID3D12PipelineState> pipelineState;
     // ComPtr<ID3D12GraphicsCommandList> cmdList;

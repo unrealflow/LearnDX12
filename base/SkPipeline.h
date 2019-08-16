@@ -82,14 +82,20 @@ private:
             rtvHeapDesc.NumDescriptors = base->imageCount;
             rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
             rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            SK_CHECK(base->device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&base->desHeap)));
+            SK_CHECK(base->device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&base->rtvHeap)));
+
+            D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+            srvHeapDesc.NumDescriptors = 1;
+            srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+            SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&base->srvHeap)));
 
             base->desSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         }
 
         // Create frame resources.
         {
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->desHeap->GetCPUDescriptorHandleForHeapStart());
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
             base->renderTargets.resize(base->imageCount);
             // Create a RTV for each frame.
@@ -201,11 +207,9 @@ private:
                              compileFlags, 0, &pixelShader, &errorMessage),
                          errorMessage);
 
-            
-
             // Describe and create the graphics pipeline state object (PSO).
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-            psoDesc.InputLayout = {inputDescs.data(),static_cast<uint32_t>(inputDescs.size())};
+            psoDesc.InputLayout = {inputDescs.data(), static_cast<uint32_t>(inputDescs.size())};
             psoDesc.pRootSignature = base->rootSignature.Get();
             psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
             psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());

@@ -8,7 +8,7 @@ class SkCmd
 private:
     SkBase *base;
     std::vector<ComPtr<ID3D12GraphicsCommandList>> cmdLists;
-    std::vector<SkMesh*> meshes;
+    std::vector<SkMesh *> meshes;
     std::vector<SkFence> fences;
 
     void CreateFence()
@@ -21,7 +21,6 @@ private:
     }
     void LoadAssets()
     {
-       
     }
 
 public:
@@ -30,7 +29,7 @@ public:
         base = initBase;
         meshes.clear();
     }
-    void AddMesh(SkMesh*mesh)
+    void AddMesh(SkMesh *mesh)
     {
         meshes.emplace_back(mesh);
     }
@@ -51,7 +50,7 @@ public:
         CD3DX12_VIEWPORT m_viewport{0.0f, 0.0f, static_cast<float>(base->width), static_cast<float>(base->height)};
         CD3DX12_RECT m_scissorRect{0, 0, static_cast<LONG>(base->width), static_cast<LONG>(base->height)};
 
-        SK_CHECK(base->cmdPool->Reset());
+        // SK_CHECK(base->cmdPool->Reset());
         for (int i = 0; i < this->cmdLists.size(); i++)
         {
             // However, when ExecuteCommandList() is called on a particular command
@@ -65,13 +64,17 @@ public:
             SK_CHECK(this->cmdLists[i]->Reset(base->cmdPool.Get(), base->pipelineState.Get()));
             this->cmdLists[i]->SetGraphicsRootSignature(base->rootSignature.Get());
 
+            ID3D12DescriptorHeap *ppHeaps[] = {base->srvHeap.Get()};
+            this->cmdLists[i]->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+            this->cmdLists[i]->SetGraphicsRootDescriptorTable(0, base->srvHeap->GetGPUDescriptorHandleForHeapStart());
+
             this->cmdLists[i]->RSSetViewports(1, &m_viewport);
             this->cmdLists[i]->RSSetScissorRects(1, &m_scissorRect);
 
             // Indicate that the back buffer will be used as a render target.
             this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->desHeap->GetCPUDescriptorHandleForHeapStart(), i, base->desSize);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart(), i, base->desSize);
             this->cmdLists[i]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
             // Record commands.
             const float clearColor[] = {0.0f, 0.2f, 0.4f, 1.0f};
@@ -106,5 +109,15 @@ public:
         // cleaned up by the destructor.
         SkFence::CleanAllFence(fences);
         meshes.clear();
+    }
+    void BeginCmd(ComPtr<ID3D12GraphicsCommandList> &cmd)
+    {
+        SK_CHECK(base->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, base->cmdPool.Get(), nullptr, IID_PPV_ARGS(&cmd)));
+    }
+    void FlushCmd(ComPtr<ID3D12GraphicsCommandList> &cmd)
+    {
+        SK_CHECK(cmd->Close());
+        ID3D12CommandList *ppCommandLists[] = {cmd.Get()};
+        base->cmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
     }
 };

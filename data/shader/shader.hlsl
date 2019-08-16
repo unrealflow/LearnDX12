@@ -15,6 +15,8 @@ struct PSInput
     float4 color : COLOR;
     float2 uv: TEXCOORD;
 };
+Texture2D g_texture : register(t0);
+SamplerState g_sampler : register(s0);
 
 PSInput VSMain(float4 position : POSITION, float4 color : COLOR,float2 uv: TEXCOORD)
 {
@@ -23,11 +25,12 @@ PSInput VSMain(float4 position : POSITION, float4 color : COLOR,float2 uv: TEXCO
     result.position = position;
     float inter=uv.x*uv.y;
     result.color =float4(uv.x-inter,uv.y-inter,inter,1.0);
-
+    result.uv=uv;
     return result;
 }
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return input.color;
+    return g_texture.Sample(g_sampler, input.uv);
+    // return input.color;
 }

@@ -10,10 +10,14 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
     endif()
 endif()
 
+add_definitions(-DWIN_MAIN)
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /subsystem:windows") 
+
 set(LearnDX12Project ${PROJECT_SOURCE_DIR})
 set(INCLUDE ${LearnDX12Project}/include ${LearnDX12Project}/base)
 include_directories(${INCLUDE})
-add_definitions(-DSK_DATA_DIR=L\"${CMAKE_SOURCE_DIR}/data/\")
+add_definitions(-DSK_DATA_DIR_W=L\"${CMAKE_SOURCE_DIR}/data/\")
+add_definitions(-DSK_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data/\")
 link_directories(${LearnDX12Project}/lib)
 
 
