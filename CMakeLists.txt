@@ -32,7 +32,7 @@ ENDIF( CMAKE_SIZEOF_VOID_P EQUAL 8)
 link_libraries(d3d12.lib)
 link_libraries(dxgi.lib)
 link_libraries(d3dcompiler.lib)
-# link_libraries(assimp.lib)
+link_libraries(assimp.lib)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${LearnDX12Project}/bin)   
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${LearnDX12Project}/bin)   

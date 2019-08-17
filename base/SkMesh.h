@@ -1,20 +1,32 @@
 ﻿#pragma once
 #include "SkBase.h"
-
+struct SkSubMesh
+{
+    uint32_t offset;
+    uint32_t vertexCount;
+    uint32_t indexCount;
+};
 class SkMesh
 {
 private:
     SkBase *base;
 
 public:
-    ComPtr<ID3D12Resource> m_vertexBuffer;
-    D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+    ComPtr<ID3D12Resource> vertexBuf;
+    D3D12_VERTEX_BUFFER_VIEW vertexBufView;
+    ComPtr<ID3D12Resource> indexBuffer;
+    D3D12_INDEX_BUFFER_VIEW indexBufView;
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
+    uint32_t vertexCount = 0;
+    uint32_t indexCount = 0;
     // Define the vertex input layout.
 
+    std::vector<SkSubMesh> subMeshes;
     void Init(SkBase *initBase)
     {
         base = initBase;
+        inputDescs.clear();
+        subMeshes.clear();
     }
     void SetupTriangle()
     {
@@ -33,10 +45,10 @@ public:
             // Define the geometry for a triangle.
             Vertex triangleVertices[] =
                 {
-                    {{0.0f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-                    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
-
+                    {{0.0f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+                    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+                    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
+            this->vertexCount = 3;
             const UINT vertexBufferSize = sizeof(triangleVertices);
 
             // Note: using upload heaps to transfer static data like vert buffers is not
@@ -49,25 +61,55 @@ public:
                 &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
                 D3D12_RESOURCE_STATE_GENERIC_READ,
                 nullptr,
-                IID_PPV_ARGS(&m_vertexBuffer)));
+                IID_PPV_ARGS(&vertexBuf)));
 
             // Copy the triangle data to the vertex buffer.
             void *pVertexDataBegin;
             CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource on the CPU.
-            SK_CHECK(m_vertexBuffer->Map(0, &readRange, &pVertexDataBegin));
+            SK_CHECK(vertexBuf->Map(0, &readRange, &pVertexDataBegin));
             memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
-            m_vertexBuffer->Unmap(0, nullptr);
+            vertexBuf->Unmap(0, nullptr);
 
             // Initialize the vertex buffer view.
-            m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-            m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-            m_vertexBufferView.SizeInBytes = vertexBufferSize;
+            vertexBufView.BufferLocation = vertexBuf->GetGPUVirtualAddress();
+            vertexBufView.StrideInBytes = sizeof(Vertex);
+            vertexBufView.SizeInBytes = vertexBufferSize;
         }
     }
     void Draw(ID3D12GraphicsCommandList *cmd)
     {
         cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        cmd->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-        cmd->DrawInstanced(3, 1, 0, 0);
+        if (vertexCount > 0)
+        {
+            cmd->IASetVertexBuffers(0, 1, &vertexBufView);
+            if (indexCount > 0)
+            {
+                cmd->IASetIndexBuffer(&indexBufView);
+                cmd->DrawIndexedInstanced(this->indexCount, 1, 0, 0, 0);
+            }
+            else
+            {
+                cmd->DrawInstanced(this->vertexCount, 1, 0, 0);
+            }
+        }
+        else
+        {
+            cmd->DrawInstanced(3, 1, 0, 0);
+        }
+    }
+    void DrawSubMesh(ID3D12GraphicsCommandList *cmd, uint32_t index)
+    {
+        cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        cmd->IASetVertexBuffers(0, 1, &vertexBufView);
+        if (indexCount > 0)
+        {
+            cmd->IASetIndexBuffer(&indexBufView);
+            cmd->DrawIndexedInstanced(subMeshes[index].indexCount,
+                                      1, subMeshes[index].offset, 0, 0);
+        }
+        else
+        {
+            cmd->DrawInstanced(subMeshes[index].vertexCount, 1, subMeshes[index].offset, 0);
+        }
     }
 };

@@ -71,16 +71,12 @@ public:
         srvDesc.Texture2D.MipLevels = 1;
         base->device->CreateShaderResourceView(texture.Get(), &srvDesc, base->srvHeap->GetCPUDescriptorHandleForHeapStart());
         {
-            ComPtr<ID3D12GraphicsCommandList> cmd;
-            SK_CHECK(base->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, base->cmdPool.Get(), base->pipelineState.Get(), IID_PPV_ARGS(&cmd)));
-
+            auto cmd=base->BeginCmd();
             UpdateSubresources(cmd.Get(), texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
 
             cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
             
-            SK_CHECK(cmd->Close());
-            ID3D12CommandList *ppCommandLists[] = {cmd.Get()};
-            base->cmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+            base->FlushCmd(cmd);
         }
     }
     void InitCheckerboard()

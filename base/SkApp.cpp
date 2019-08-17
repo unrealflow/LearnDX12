@@ -2,6 +2,7 @@
 #include "SkPipeline.h"
 #include "SkCmd.h"
 #include "SkTex.h"
+#include "SkModel.h"
 SkMesh mesh;
 SkTex tex;
 void SkApp::Setup()

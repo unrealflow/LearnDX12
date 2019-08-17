@@ -41,4 +41,24 @@ public:
         }
         return hwnd;
     }
+
+    ComPtr<ID3D12GraphicsCommandList> BeginCmd()
+    {
+        ComPtr<ID3D12GraphicsCommandList> cmd;
+        SK_CHECK(this->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, this->cmdPool.Get(), nullptr, IID_PPV_ARGS(&cmd)));
+        return cmd;
+    }
+    template<typename T>
+    ComPtr<T> BeginCmd()
+    {
+        ComPtr<T> cmd;
+        SK_CHECK(this->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, this->cmdPool.Get(), nullptr, IID_PPV_ARGS(&cmd)));
+        return cmd;
+    }
+    void FlushCmd(ComPtr<ID3D12GraphicsCommandList> &cmd)
+    {
+        SK_CHECK(cmd->Close());
+        ID3D12CommandList *ppCommandLists[] = {cmd.Get()};
+        this->cmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    }
 };
