@@ -2,8 +2,9 @@
 #include "SkBase.h"
 struct SkSubMesh
 {
-    uint32_t offset;
+    uint32_t vertexBase;
     uint32_t vertexCount;
+    uint32_t indexBase;
     uint32_t indexCount;
 };
 class SkMesh
@@ -16,19 +17,20 @@ public:
     D3D12_VERTEX_BUFFER_VIEW vertexBufView;
     ComPtr<ID3D12Resource> indexBuffer;
     D3D12_INDEX_BUFFER_VIEW indexBufView;
-    std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
     uint32_t vertexCount = 0;
     uint32_t indexCount = 0;
     // Define the vertex input layout.
-
+    std::vector<float> vertexData;
+    std::vector<uint32_t> indexData;
     std::vector<SkSubMesh> subMeshes;
     void Init(SkBase *initBase)
     {
         base = initBase;
-        inputDescs.clear();
         subMeshes.clear();
+        vertexData.clear();
+        indexData.clear();
     }
-    void SetupTriangle()
+    void SetupTriangle(std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
     {
 
         struct Vertex
@@ -105,11 +107,11 @@ public:
         {
             cmd->IASetIndexBuffer(&indexBufView);
             cmd->DrawIndexedInstanced(subMeshes[index].indexCount,
-                                      1, subMeshes[index].offset, 0, 0);
+                                      1, subMeshes[index].indexBase, 0, 0);
         }
         else
         {
-            cmd->DrawInstanced(subMeshes[index].vertexCount, 1, subMeshes[index].offset, 0);
+            cmd->DrawInstanced(subMeshes[index].vertexCount, 1, subMeshes[index].vertexBase, 0);
         }
     }
 };

@@ -5,6 +5,13 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/cimport.h>
+
+#define _vec3(x) \
+    aiVector3D { x, x, x }
+#define _vec2(x) \
+    aiVector2D { x, x }
+#define vec3 aiVector3D
+#define vec2 aiVector2D
 class SkModel
 {
 
@@ -61,18 +68,17 @@ public:
             return res;
         }
     };
-    static XMFLOAT3 _XMFLOAT3(float x) { return XMFLOAT3{x, x, x}; }
-    static XMFLOAT2 _XMFLOAT2(float x) { return XMFLOAT2{x, x}; }
+
     struct ModelCreateInfo
     {
-        XMFLOAT3 center;
-        XMFLOAT3 scale;
-        XMFLOAT2 uvscale;
+        vec3 center;
+        vec3 scale;
+        vec2 uvscale;
         // VkMemoryPropertyFlags memoryPropertyFlags = 0;
 
-        ModelCreateInfo() : center(_XMFLOAT3(0.0f)), scale(_XMFLOAT3(1.0f)), uvscale(_XMFLOAT2(1.0f)){};
+        ModelCreateInfo() : center(_vec3(0.0f)), scale(_vec3(1.0f)), uvscale(_vec2(1.0f)){};
 
-        ModelCreateInfo(XMFLOAT3 scale, XMFLOAT2 uvscale, XMFLOAT3 center)
+        ModelCreateInfo(vec3 scale, vec2 uvscale, vec3 center)
         {
             this->center = center;
             this->scale = scale;
@@ -81,15 +87,237 @@ public:
 
         ModelCreateInfo(float scale, float uvscale, float center)
         {
-            this->center = _XMFLOAT3(center);
-            this->scale = _XMFLOAT3(scale);
-            this->uvscale = _XMFLOAT2(uvscale);
+            this->center = _vec3(center);
+            this->scale = _vec3(scale);
+            this->uvscale = _vec2(uvscale);
         }
     };
 
 private:
     SkBase *base;
     static const int defaultFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
+
+public:
     SkMesh mesh;
-    
+    VertexLayout layout;
+    uint32_t indexCount = 0;
+    uint32_t vertexCount = 0;
+    std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
+    struct Dimension
+    {
+        vec3 min = _vec3(FLT_MAX);
+        vec3 max = _vec3(-FLT_MAX);
+        vec3 size;
+    } dim;
+
+    void Init(SkBase *initBase)
+    {
+        base = initBase;
+        // matSet.Init(mem);
+        layout = {{
+            VERTEX_COMPONENT_POSITION,
+            VERTEX_COMPONENT_NORMAL,
+            VERTEX_COMPONENT_UV,
+        }};
+        RebuildInputDescription();
+    }
+    //根据设置生成InputBindingDescription
+    void RebuildInputDescription(UINT semanticIndex = 0, UINT inputSlot = 0)
+    {
+        inputDescs.resize(layout.components.size());
+        uint32_t _offset = 0;
+        for (size_t i = 0; i < layout.components.size(); i++)
+        {
+            switch (layout.components[i])
+            {
+            case VERTEX_COMPONENT_NORMAL:
+                inputDescs[i] = {"NORMAL",
+                                 semanticIndex,
+                                 DXGI_FORMAT_R32G32B32_FLOAT,
+                                 inputSlot,
+                                 _offset,
+                                 D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                                 0};
+                _offset += sizeof(float) * 3;
+                break;
+            case VERTEX_COMPONENT_COLOR:
+                inputDescs[i] = {"COLOR",
+                                 semanticIndex,
+                                 DXGI_FORMAT_R32G32B32_FLOAT,
+                                 inputSlot,
+                                 _offset,
+                                 D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                                 0};
+                _offset += sizeof(float) * 3;
+                break;
+            case VERTEX_COMPONENT_POSITION:
+                // inputAttributes[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+                inputDescs[i] = {"POSITION",
+                                 semanticIndex,
+                                 DXGI_FORMAT_R32G32B32_FLOAT,
+                                 inputSlot,
+                                 _offset,
+                                 D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                                 0};
+                _offset += sizeof(float) * 3;
+                break;
+            case VERTEX_COMPONENT_UV:
+                inputDescs[i] = {"TEXCOORD",
+                                 semanticIndex,
+                                 DXGI_FORMAT_R32G32_FLOAT,
+                                 inputSlot,
+                                 _offset,
+                                 D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                                 0};
+                _offset += sizeof(float) * 2;
+                break;
+            default:
+                throw std::runtime_error("Components Error!");
+                break;
+            }
+        }
+    }
+    void ImportModel(const std::string &path, ModelCreateInfo *createInfo = nullptr, VertexLayout *_layout = nullptr)
+    {
+        Assimp::Importer importer;
+        const aiScene *pScene;
+        pScene = importer.ReadFile(path, defaultFlags);
+        if (!pScene)
+        {
+            std::string error = importer.GetErrorString();
+            throw std::runtime_error("Can't load " + path + "! " + error);
+        }
+
+        std::string directory;
+        switch (path[0])
+        {
+        case 'C':
+        case 'D':
+        case 'E':
+        case 'F':
+        case 'G':
+        case 'Z':
+        case '.':
+            if (path[1] == '/' || path[1] == '\\')
+            {
+                directory = path.substr(0, path.find_last_of('/'));
+            }
+            break;
+        default:
+            directory = ".";
+            break;
+        }
+        if (pScene)
+        {
+            vec3 scale = _vec3(1.0f);
+            vec2 uvscale = _vec2(1.0f);
+            vec3 center = _vec3(0.0f);
+            if (createInfo)
+            {
+                scale = createInfo->scale;
+                uvscale = createInfo->uvscale;
+                center = createInfo->center;
+            }
+            vertexCount = 0;
+            indexCount = 0;
+            if (_layout != nullptr)
+            {
+                this->layout = VertexLayout(*_layout);
+                RebuildInputDescription();
+            }
+            mesh.subMeshes.clear();
+            mesh.subMeshes.resize(pScene->mNumMeshes);
+            for (uint32_t i = 0; i < pScene->mNumMeshes; i++)
+            {
+                const aiMesh *paiMesh = pScene->mMeshes[i];
+
+                mesh.subMeshes[i] = {};
+                mesh.subMeshes[i].vertexBase = vertexCount;
+                mesh.subMeshes[i].indexBase = indexCount;
+
+                vertexCount += paiMesh->mNumVertices;
+
+                aiColor3D pColor(1.0f, 1.0f, 1.0f);
+                aiMaterial *material = pScene->mMaterials[paiMesh->mMaterialIndex];
+                material->Get(AI_MATKEY_COLOR_DIFFUSE, pColor);
+                const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
+                for (unsigned int j = 0; j < paiMesh->mNumVertices; j++)
+                {
+                    const aiVector3D *pPos = &(paiMesh->mVertices[j]);
+                    const aiVector3D *pNormal = &(paiMesh->mNormals[j]);
+                    const aiVector3D *pTexCoord = (paiMesh->HasTextureCoords(0)) ? &(paiMesh->mTextureCoords[0][j]) : &Zero3D;
+                    const aiVector3D *pTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mTangents[j]) : &Zero3D;
+                    const aiVector3D *pBiTangent = (paiMesh->HasTangentsAndBitangents()) ? &(paiMesh->mBitangents[j]) : &Zero3D;
+
+                    for (auto &component : layout.components)
+                    {
+                        switch (component)
+                        {
+                        case VERTEX_COMPONENT_POSITION:
+                            mesh.vertexData.push_back(pPos->x * scale.x + center.x);
+                            mesh.vertexData.push_back(-pPos->y * scale.y + center.y);
+                            mesh.vertexData.push_back(pPos->z * scale.z + center.z);
+                            break;
+                        case VERTEX_COMPONENT_NORMAL:
+                            mesh.vertexData.push_back(pNormal->x);
+                            mesh.vertexData.push_back(-pNormal->y);
+                            mesh.vertexData.push_back(pNormal->z);
+                            break;
+                        case VERTEX_COMPONENT_UV:
+                            mesh.vertexData.push_back(pTexCoord->x * uvscale.x);
+                            mesh.vertexData.push_back(pTexCoord->y * uvscale.y);
+                            break;
+                        case VERTEX_COMPONENT_COLOR:
+                            mesh.vertexData.push_back(pColor.r);
+                            mesh.vertexData.push_back(pColor.g);
+                            mesh.vertexData.push_back(pColor.b);
+                            break;
+                        case VERTEX_COMPONENT_TANGENT:
+                            mesh.vertexData.push_back(pTangent->x);
+                            mesh.vertexData.push_back(pTangent->y);
+                            mesh.vertexData.push_back(pTangent->z);
+                            break;
+                        case VERTEX_COMPONENT_BITANGENT:
+                            mesh.vertexData.push_back(pBiTangent->x);
+                            mesh.vertexData.push_back(pBiTangent->y);
+                            mesh.vertexData.push_back(pBiTangent->z);
+                            break;
+                        // Dummy components for padding
+                        case VERTEX_COMPONENT_DUMMY_FLOAT:
+                            mesh.vertexData.push_back(0.0f);
+                            break;
+                        case VERTEX_COMPONENT_DUMMY_VEC4:
+                            mesh.vertexData.push_back(0.0f);
+                            mesh.vertexData.push_back(0.0f);
+                            mesh.vertexData.push_back(0.0f);
+                            mesh.vertexData.push_back(0.0f);
+                            break;
+                        };
+                    }
+                    dim.max.x = fmax(pPos->x, dim.max.x);
+                    dim.max.y = fmax(pPos->y, dim.max.y);
+                    dim.max.z = fmax(pPos->z, dim.max.z);
+
+                    dim.min.x = fmin(pPos->x, dim.min.x);
+                    dim.min.y = fmin(pPos->y, dim.min.y);
+                    dim.min.z = fmin(pPos->z, dim.min.z);
+                }
+                dim.size = dim.max - dim.min;
+                mesh.subMeshes[i].vertexCount = paiMesh->mNumVertices;
+
+                uint32_t indexBase = static_cast<uint32_t>(mesh.indexData.size());
+                for (unsigned int j = 0; j < paiMesh->mNumFaces; j++)
+                {
+                    const aiFace &Face = paiMesh->mFaces[j];
+                    if (Face.mNumIndices != 3)
+                        continue;
+                    mesh.indexData.push_back(Face.mIndices[0]);
+                    mesh.indexData.push_back(Face.mIndices[1]);
+                    mesh.indexData.push_back(Face.mIndices[2]);
+                    mesh.subMeshes[i].indexCount += 3;
+                    indexCount += 3;
+                }
+            }
+        }
+    }
 };

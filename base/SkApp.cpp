@@ -8,10 +8,11 @@ SkTex tex;
 void SkApp::Setup()
 {
     mesh.Init(this->base);
-    mesh.SetupTriangle();
+    std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
+    mesh.SetupTriangle(inputDescs);
     tex.Init(GetAssetFullPath("texture/pic.jpg"));
     // tex.InitCheckerboard();
-    pipeline.Setup(mesh.inputDescs);
+    pipeline.Setup(inputDescs);
     tex.Setup(base);
     cmd.AddMesh(&mesh);
     cmd.BuildCmdLists();
