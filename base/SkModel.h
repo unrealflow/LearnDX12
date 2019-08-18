@@ -95,13 +95,13 @@ public:
 
 private:
     SkBase *base;
-    static const int defaultFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
+    static const int defaultFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices |aiProcess_MakeLeftHanded | aiProcess_GenSmoothNormals;
 
 public:
     SkMesh mesh;
     VertexLayout layout;
-    uint32_t indexCount = 0;
-    uint32_t vertexCount = 0;
+    // uint32_t indexCount = 0;
+    // uint32_t vertexCount = 0;
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
     struct Dimension
     {
@@ -113,6 +113,7 @@ public:
     void Init(SkBase *initBase)
     {
         base = initBase;
+        mesh.Init(base);
         // matSet.Init(mem);
         layout = {{
             VERTEX_COMPONENT_POSITION,
@@ -218,8 +219,9 @@ public:
                 uvscale = createInfo->uvscale;
                 center = createInfo->center;
             }
-            vertexCount = 0;
-            indexCount = 0;
+            mesh.vertexCount = 0;
+            mesh.indexCount = 0;
+            mesh.stride=layout.stride();
             if (_layout != nullptr)
             {
                 this->layout = VertexLayout(*_layout);
@@ -232,10 +234,10 @@ public:
                 const aiMesh *paiMesh = pScene->mMeshes[i];
 
                 mesh.subMeshes[i] = {};
-                mesh.subMeshes[i].vertexBase = vertexCount;
-                mesh.subMeshes[i].indexBase = indexCount;
+                mesh.subMeshes[i].vertexBase = mesh.vertexCount;
+                mesh.subMeshes[i].indexBase = mesh.indexCount;
 
-                vertexCount += paiMesh->mNumVertices;
+                mesh.vertexCount += paiMesh->mNumVertices;
 
                 aiColor3D pColor(1.0f, 1.0f, 1.0f);
                 aiMaterial *material = pScene->mMaterials[paiMesh->mMaterialIndex];
@@ -311,11 +313,11 @@ public:
                     const aiFace &Face = paiMesh->mFaces[j];
                     if (Face.mNumIndices != 3)
                         continue;
-                    mesh.indexData.push_back(Face.mIndices[0]);
-                    mesh.indexData.push_back(Face.mIndices[1]);
-                    mesh.indexData.push_back(Face.mIndices[2]);
+                    mesh.indexData.push_back(indexBase+ Face.mIndices[0]);
+                    mesh.indexData.push_back(indexBase+ Face.mIndices[1]);
+                    mesh.indexData.push_back(indexBase+ Face.mIndices[2]);
                     mesh.subMeshes[i].indexCount += 3;
-                    indexCount += 3;
+                    mesh.indexCount += 3;
                 }
             }
         }

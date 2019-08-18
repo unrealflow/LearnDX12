@@ -1,8 +1,6 @@
 ﻿#pragma once
 #include "SkTools.h"
 
-using Microsoft::WRL::ComPtr;
-
 class SkBase
 {
 public:
@@ -48,7 +46,7 @@ public:
         SK_CHECK(this->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, this->cmdPool.Get(), nullptr, IID_PPV_ARGS(&cmd)));
         return cmd;
     }
-    template<typename T>
+    template <typename T>
     ComPtr<T> BeginCmd()
     {
         ComPtr<T> cmd;
@@ -60,5 +58,22 @@ public:
         SK_CHECK(cmd->Close());
         ID3D12CommandList *ppCommandLists[] = {cmd.Get()};
         this->cmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    }
+    HRESULT CreateBuffer(D3D12_HEAP_TYPE HeapType,
+                         D3D12_HEAP_FLAGS HeapFlags,
+                         uint32_t BufferSize,
+                         D3D12_RESOURCE_STATES InitialResourceState,
+                         const D3D12_CLEAR_VALUE *pOptimizedClearValue,
+                         SkBuffer *buffer)
+    {
+        SK_N_NULL(this->device.Get());
+        buffer->bufSize = BufferSize;
+        return this->device->CreateCommittedResource(
+            &CD3DX12_HEAP_PROPERTIES(HeapType),
+            HeapFlags,
+            &CD3DX12_RESOURCE_DESC::Buffer(BufferSize),
+            InitialResourceState,
+            pOptimizedClearValue,
+            IID_PPV_ARGS(&(buffer->buf)));
     }
 };

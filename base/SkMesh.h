@@ -13,12 +13,14 @@ private:
     SkBase *base;
 
 public:
-    ComPtr<ID3D12Resource> vertexBuf;
+    // ComPtr<ID3D12Resource> vertexBuf;
     D3D12_VERTEX_BUFFER_VIEW vertexBufView;
-    ComPtr<ID3D12Resource> indexBuffer;
+    SkBuffer vertexBuf;
+    SkBuffer indexBuf;
     D3D12_INDEX_BUFFER_VIEW indexBufView;
     uint32_t vertexCount = 0;
     uint32_t indexCount = 0;
+    uint32_t stride = 0;
     // Define the vertex input layout.
     std::vector<float> vertexData;
     std::vector<uint32_t> indexData;
@@ -53,30 +55,56 @@ public:
             this->vertexCount = 3;
             const UINT vertexBufferSize = sizeof(triangleVertices);
 
-            // Note: using upload heaps to transfer static data like vert buffers is not
-            // recommended. Every time the GPU needs it, the upload heap will be marshalled
-            // over. Please read up on Default Heap usage. An upload heap is used here for
-            // code simplicity and because there are very few verts to actually transfer.
-            SK_CHECK(base->device->CreateCommittedResource(
-                &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-                D3D12_HEAP_FLAG_NONE,
-                &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
-                D3D12_RESOURCE_STATE_GENERIC_READ,
-                nullptr,
-                IID_PPV_ARGS(&vertexBuf)));
-
+            SK_CHECK(base->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
+                                        D3D12_HEAP_FLAG_NONE,
+                                        vertexBufferSize,
+                                        D3D12_RESOURCE_STATE_GENERIC_READ,
+                                        nullptr,
+                                        &vertexBuf));
             // Copy the triangle data to the vertex buffer.
-            void *pVertexDataBegin;
-            CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource on the CPU.
-            SK_CHECK(vertexBuf->Map(0, &readRange, &pVertexDataBegin));
-            memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
-            vertexBuf->Unmap(0, nullptr);
+            // CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource on the CPU.
+            SK_CHECK(vertexBuf.Map());
+            memcpy(vertexBuf.data, triangleVertices, sizeof(triangleVertices));
+            vertexBuf.Unmap();
 
             // Initialize the vertex buffer view.
-            vertexBufView.BufferLocation = vertexBuf->GetGPUVirtualAddress();
+            vertexBufView.BufferLocation = vertexBuf.buf->GetGPUVirtualAddress();
             vertexBufView.StrideInBytes = sizeof(Vertex);
-            vertexBufView.SizeInBytes = vertexBufferSize;
+            vertexBufView.SizeInBytes = vertexBuf.bufSize;
         }
+    }
+    void Setup()
+    {
+        uint32_t vertexBufferSize = (uint32_t)vertexData.size() * sizeof(float);
+        SK_CHECK(base->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
+                                    D3D12_HEAP_FLAG_NONE,
+                                    vertexBufferSize,
+                                    D3D12_RESOURCE_STATE_GENERIC_READ,
+                                    nullptr,
+                                    &vertexBuf));
+        SK_CHECK(vertexBuf.Map());
+        memcpy(vertexBuf.data, vertexData.data(), vertexBufferSize);
+        vertexBuf.Unmap();
+
+        vertexBufView.BufferLocation = vertexBuf.buf->GetGPUVirtualAddress();
+        vertexBufView.StrideInBytes = this->stride;
+        vertexBufView.SizeInBytes = vertexBuf.bufSize;
+
+        uint32_t indexBufferSize = (uint32_t)indexData.size() * sizeof(uint32_t);
+        SK_CHECK(base->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
+                                    D3D12_HEAP_FLAG_NONE,
+                                    indexBufferSize,
+                                    D3D12_RESOURCE_STATE_GENERIC_READ,
+                                    nullptr,
+                                    &indexBuf));
+        SK_CHECK(indexBuf.Map());
+        memcpy(indexBuf.data, indexData.data(), indexBufferSize);
+        indexBuf.Unmap();
+
+        indexBufView.BufferLocation = indexBuf.buf->GetGPUVirtualAddress();
+        indexBufView.Format=DXGI_FORMAT_R32_UINT;
+        indexBufView.SizeInBytes = indexBuf.bufSize;
+
     }
     void Draw(ID3D12GraphicsCommandList *cmd)
     {

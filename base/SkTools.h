@@ -38,7 +38,7 @@
 
 #define SK_N_NULL(_res_)                              \
     {                                                 \
-        bool _h_res_ = _res_;                         \
+        bool _h_res_ = (_res_);                       \
         if (!_h_res_)                                 \
         {                                             \
             SK_DEBUG();                               \
