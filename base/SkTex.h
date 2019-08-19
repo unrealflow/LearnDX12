@@ -5,7 +5,7 @@ class SkTex
 {
 private:
     static const UINT TexturePixelSize = 4;
-
+    SkBase*base;
 public:
     unsigned char *data;
     std::vector<UINT8> test_data;
@@ -15,8 +15,9 @@ public:
     D3D12_RESOURCE_DESC textureDesc = {};
     ComPtr<ID3D12Resource> texture;
     ComPtr<ID3D12Resource> textureUploadHeap;
-    void Init(std::string path)
+    void Init(SkBase *initBase,std::string path)
     {
+        base=initBase;
         int _width, _height;
         this->data = stbi_load(path.c_str(), &_width, &_height, &nrChannels, 4);
         this->width = static_cast<uint32_t>(_width);
@@ -27,7 +28,7 @@ public:
             throw std::runtime_error("Failed to load texture in " + path);
         }
     }
-    void Setup(SkBase *base)
+    void Setup()
     {
         textureDesc.MipLevels = 1;
         textureDesc.Format = this->format;

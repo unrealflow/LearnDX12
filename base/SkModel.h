@@ -6,10 +6,10 @@
 #include <assimp/postprocess.h>
 #include <assimp/cimport.h>
 
-#define _vec3(x) \
-    aiVector3D { x, x, x }
-#define _vec2(x) \
-    aiVector2D { x, x }
+// #define vec3(x) \
+//     aiVector3D { x, x, x }
+// #define vec2(x) \
+//     aiVector2D { x, x }
 #define vec3 aiVector3D
 #define vec2 aiVector2D
 class SkModel
@@ -25,7 +25,7 @@ public:
         VERTEX_COMPONENT_TANGENT = 0x4,
         VERTEX_COMPONENT_BITANGENT = 0x5,
         VERTEX_COMPONENT_DUMMY_FLOAT = 0x6,
-        VERTEX_COMPONENT_DUMMY_VEC4 = 0x7,
+        VERTEX_COMPONENT_DUMMYVEC4 = 0x7,
         VERTEX_COMPONENT_MATINDEX = 0x8
     } Component;
     struct VertexLayout
@@ -57,7 +57,7 @@ public:
                 case VERTEX_COMPONENT_DUMMY_FLOAT:
                     res += sizeof(float);
                     break;
-                case VERTEX_COMPONENT_DUMMY_VEC4:
+                case VERTEX_COMPONENT_DUMMYVEC4:
                     res += 4 * sizeof(float);
                     break;
                 default:
@@ -76,7 +76,7 @@ public:
         vec2 uvscale;
         // VkMemoryPropertyFlags memoryPropertyFlags = 0;
 
-        ModelCreateInfo() : center(_vec3(0.0f)), scale(_vec3(1.0f)), uvscale(_vec2(1.0f)){};
+        ModelCreateInfo() : center(vec3(0.0f)), scale(vec3(1.0f)), uvscale(vec2(1.0f)){};
 
         ModelCreateInfo(vec3 scale, vec2 uvscale, vec3 center)
         {
@@ -87,9 +87,9 @@ public:
 
         ModelCreateInfo(float scale, float uvscale, float center)
         {
-            this->center = _vec3(center);
-            this->scale = _vec3(scale);
-            this->uvscale = _vec2(uvscale);
+            this->center = vec3(center);
+            this->scale = vec3(scale);
+            this->uvscale = vec2(uvscale);
         }
     };
 
@@ -105,8 +105,8 @@ public:
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
     struct Dimension
     {
-        vec3 min = _vec3(FLT_MAX);
-        vec3 max = _vec3(-FLT_MAX);
+        vec3 min = vec3(FLT_MAX);
+        vec3 max = vec3(-FLT_MAX);
         vec3 size;
     } dim;
 
@@ -210,9 +210,9 @@ public:
         }
         if (pScene)
         {
-            vec3 scale = _vec3(1.0f);
-            vec2 uvscale = _vec2(1.0f);
-            vec3 center = _vec3(0.0f);
+            vec3 scale = vec3(1.0f);
+            vec2 uvscale = vec2(1.0f);
+            vec3 center = vec3(0.0f);
             if (createInfo)
             {
                 scale = createInfo->scale;
@@ -257,13 +257,13 @@ public:
                         {
                         case VERTEX_COMPONENT_POSITION:
                             mesh.vertexData.push_back(pPos->x * scale.x + center.x);
-                            mesh.vertexData.push_back(-pPos->y * scale.y + center.y);
-                            mesh.vertexData.push_back(pPos->z * scale.z + center.z);
+                            mesh.vertexData.push_back(pPos->y * scale.y + center.y);
+                            mesh.vertexData.push_back(-pPos->z * scale.z + center.z);
                             break;
                         case VERTEX_COMPONENT_NORMAL:
                             mesh.vertexData.push_back(pNormal->x);
-                            mesh.vertexData.push_back(-pNormal->y);
-                            mesh.vertexData.push_back(pNormal->z);
+                            mesh.vertexData.push_back(pNormal->y);
+                            mesh.vertexData.push_back(-pNormal->z);
                             break;
                         case VERTEX_COMPONENT_UV:
                             mesh.vertexData.push_back(pTexCoord->x * uvscale.x);
@@ -288,7 +288,7 @@ public:
                         case VERTEX_COMPONENT_DUMMY_FLOAT:
                             mesh.vertexData.push_back(0.0f);
                             break;
-                        case VERTEX_COMPONENT_DUMMY_VEC4:
+                        case VERTEX_COMPONENT_DUMMYVEC4:
                             mesh.vertexData.push_back(0.0f);
                             mesh.vertexData.push_back(0.0f);
                             mesh.vertexData.push_back(0.0f);

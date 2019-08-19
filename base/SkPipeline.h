@@ -154,9 +154,9 @@ private:
             CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
             ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
-            CD3DX12_ROOT_PARAMETER1 rootParameters[1];
+            CD3DX12_ROOT_PARAMETER1 rootParameters[2];
             rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-
+            rootParameters[1].InitAsConstantBufferView(0);
             D3D12_STATIC_SAMPLER_DESC sampler = {};
             sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
             sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
@@ -197,13 +197,13 @@ private:
 
             SK_CHECK_MSG(D3DCompileFromFile(
                              GetAssetFullPath(L"shader/shader.hlsl").c_str(),
-                             nullptr, nullptr, "VSMain", "vs_5_0",
+                             nullptr, nullptr, "VSMain", "vs_5_1",
                              compileFlags, 0, &vertexShader, &errorMessage),
                          errorMessage);
 
             SK_CHECK_MSG(D3DCompileFromFile(
                              GetAssetFullPath(L"shader/shader.hlsl").c_str(),
-                             nullptr, nullptr, "PSMain", "ps_5_0",
+                             nullptr, nullptr, "PSMain", "ps_5_1",
                              compileFlags, 0, &pixelShader, &errorMessage),
                          errorMessage);
 
@@ -213,7 +213,10 @@ private:
             psoDesc.pRootSignature = base->rootSignature.Get();
             psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
             psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-            psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            auto rs =CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            // rs.FillMode=D3D12_FILL_MODE_WIREFRAME;
+            rs.CullMode=D3D12_CULL_MODE_NONE;
+            psoDesc.RasterizerState = rs;
             psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
             psoDesc.DepthStencilState.DepthEnable = FALSE;
             psoDesc.DepthStencilState.StencilEnable = FALSE;

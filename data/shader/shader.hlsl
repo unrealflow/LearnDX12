@@ -15,10 +15,14 @@ struct PSInput
     float4 normal : NORMAL;
     float2 uv: TEXCOORD;
 };
-
+struct UniformBuffer
+{
+    float4x4 projection;
+    float4x4 view;
+};
 Texture2D g_texture : register(t0);
 SamplerState g_sampler : register(s0);
-
+ConstantBuffer<UniformBuffer> buf:register(b0);
 PSInput VSMain(
     float4 position : POSITION, float4 normal : NORMAL,float2 uv: TEXCOORD,
     uint vID :SV_VERTEXID)
@@ -28,8 +32,8 @@ PSInput VSMain(
 
     // result.uv=float2(ID & 2, (ID << 1) & 2);//(0,0),(0,2),(2,0),(2,2)
     // result.position=float4(result.uv * 2.0 - 1.0, 0.0, 1.0);
-
-    result.position=float4(position.xyz*0.1,1.0);
+    // result.position=float4(position.xyz*0.1,1.0);
+    result.position=mul(float4(position.xyz*1.0,1.0),buf.projection);
     result.normal=normal;
     result.uv=uv;
     return result;
@@ -38,4 +42,5 @@ PSInput VSMain(
 float4 PSMain(PSInput input) : SV_TARGET
 {
     return g_texture.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    // return float4(buf.color,1.0);
 }

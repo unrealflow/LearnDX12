@@ -9,6 +9,7 @@ private:
     SkBase *base;
     std::vector<ComPtr<ID3D12GraphicsCommandList>> cmdLists;
     std::vector<SkMesh *> meshes;
+    std::vector<std::pair<uint32_t, SkBuffer *>> buffers;
     std::vector<SkFence> fences;
 
     void CreateFence()
@@ -28,10 +29,15 @@ public:
     {
         base = initBase;
         meshes.clear();
+        buffers.clear();
     }
     void AddMesh(SkMesh *mesh)
     {
         meshes.emplace_back(mesh);
+    }
+    void AddConstBuf(uint32_t paramIndex, SkBuffer *buf)
+    {
+        buffers.emplace_back(std::pair<uint32_t, SkBuffer *>(paramIndex, buf));
     }
     void BuildCmdLists()
     {
@@ -67,6 +73,10 @@ public:
             ID3D12DescriptorHeap *ppHeaps[] = {base->srvHeap.Get()};
             this->cmdLists[i]->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
             this->cmdLists[i]->SetGraphicsRootDescriptorTable(0, base->srvHeap->GetGPUDescriptorHandleForHeapStart());
+            for (size_t b = 0; b < buffers.size(); b++)
+            {
+                this->cmdLists[i]->SetGraphicsRootConstantBufferView(buffers[b].first, buffers[b].second->buf->GetGPUVirtualAddress());
+            }
 
             this->cmdLists[i]->RSSetViewports(1, &m_viewport);
             this->cmdLists[i]->RSSetScissorRects(1, &m_scissorRect);
