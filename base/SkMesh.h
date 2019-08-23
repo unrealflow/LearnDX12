@@ -37,9 +37,9 @@ public:
 
         struct Vertex
         {
-            XMFLOAT3 position;
-            XMFLOAT4 color;
-            XMFLOAT2 uv;
+            Vector3 position;
+            Vector3 color;
+            Vector2 uv;
         };
         inputDescs = {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
@@ -49,9 +49,9 @@ public:
             // Define the geometry for a triangle.
             Vertex triangleVertices[] =
                 {
-                    {{0.0f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-                    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
+                    {{0.0f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+                    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}};
             this->vertexCount = 3;
             const UINT vertexBufferSize = sizeof(triangleVertices);
 
@@ -102,9 +102,8 @@ public:
         indexBuf.Unmap();
 
         indexBufView.BufferLocation = indexBuf.buf->GetGPUVirtualAddress();
-        indexBufView.Format=DXGI_FORMAT_R32_UINT;
+        indexBufView.Format = DXGI_FORMAT_R32_UINT;
         indexBufView.SizeInBytes = indexBuf.bufSize;
-
     }
     void Draw(ID3D12GraphicsCommandList *cmd)
     {
@@ -116,10 +115,12 @@ public:
             {
                 cmd->IASetIndexBuffer(&indexBufView);
                 cmd->DrawIndexedInstanced(this->indexCount, 1, 0, 0, 0);
+                fprintf(stderr, "Draw by Indices...\n");
             }
             else
             {
                 cmd->DrawInstanced(this->vertexCount, 1, 0, 0);
+                fprintf(stderr, "Draw by Vertices...\n");
             }
         }
         else

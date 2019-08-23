@@ -84,7 +84,7 @@ public:
             // Indicate that the back buffer will be used as a render target.
             this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart(), i, base->desSize);
+            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart(), i, base->rtvDesSize);
             this->cmdLists[i]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
             // Record commands.
             const float clearColor[] = {0.0f, 0.2f, 0.4f, 1.0f};

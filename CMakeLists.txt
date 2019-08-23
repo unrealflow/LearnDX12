@@ -14,7 +14,7 @@ add_definitions(-DWIN_MAIN)
 SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /subsystem:windows") 
 
 set(LearnDX12Project ${PROJECT_SOURCE_DIR})
-set(INCLUDE ${LearnDX12Project}/include ${LearnDX12Project}/base)
+set(INCLUDE ${LearnDX12Project}/include ${LearnDX12Project}/base ${LearnDX12Project}/DirectXTK/Inc)
 include_directories(${INCLUDE})
 add_definitions(-DSK_DATA_DIR_W=L\"${CMAKE_SOURCE_DIR}/data/\")
 add_definitions(-DSK_DATA_DIR=\"${CMAKE_SOURCE_DIR}/data/\")
@@ -39,7 +39,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${LearnDX12Project}/bin)
 # set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${LearnDX12Project}/bin)   
 # set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${LearnDX12Project}/bin) 
 
-
+add_subdirectory(${LearnDX12Project}/DirectXTK/Src)
+link_libraries(DirectXTK)
 add_subdirectory(${LearnDX12Project}/base)
 link_libraries(base)
 add_subdirectory(${LearnDX12Project}/src)

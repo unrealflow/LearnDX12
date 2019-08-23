@@ -10,23 +10,21 @@ public:
     SkBuffer uniBuf;
     struct UniformBuffer
     {
-        XMMATRIX projection;
-        XMMATRIX view;
+        Matrix projection;
+        Matrix view;
     } uniformBuffer;
     D3D12_CONSTANT_BUFFER_VIEW_DESC bufDes;
     void Init(SkBase *initBase)
     {
         base = initBase;
         // uniformBuffer.projection = DirectX::XMMatrixPerspectiveFovLH(XMConvertToRadians(60.0f), (float)base->width / base->height, 0.1f, 100.0f);
-        XMVECTOR eyePos{0.0f, 10.0f, -5.0f};
-        XMVECTOR focusPos{0.0f, 0.0f, 0.0f};
-        XMVECTOR up{0.0f, 1.0f, 0.0f};
-        XMVECTOR tmp=DirectX::XMVector3Cross(eyePos-focusPos,up);
+       Vector3 eyePos{0.0f, 0.0f, -100.0f};
+       Vector3 focusPos{0.0f, 0.0f, 0.0f};
+       Vector3 up{0.0f, 1.0f, 0.0f};
+       Vector3 tmp=DirectX::XMVector3Cross(eyePos-focusPos,up);
         up=DirectX::XMVector3Cross(tmp,eyePos-focusPos);
-        uniformBuffer.projection = DirectX::XMMatrixLookAtLH(eyePos,
-                                                             focusPos,
-                                                             up);
-        uniformBuffer.view = XMMATRIX();
+        uniformBuffer.projection=Matrix::CreatePerspectiveFieldOfView(DirectX::XM_PI /4.0,(float)base->width/base->height,0.01f,1000.0f);
+        uniformBuffer.view=Matrix::CreateTranslation(-eyePos);
     }
     void Setup()
     {

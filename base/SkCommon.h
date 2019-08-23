@@ -9,13 +9,14 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <D3Dcompiler.h>
-#include <DirectXMath.h>
 #include "d3dx12.h"
-
+#include <chrono>
 #include <string>
 #include <wrl.h>
 #include <shellapi.h>
-using namespace DirectX;
+#include <SimpleMath.h>
+// using namespace DirectX;
+using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
 
 struct SkBuffer

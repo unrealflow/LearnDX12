@@ -21,13 +21,16 @@ public:
     ComPtr<ID3D12DescriptorHeap> rtvHeap;
     //shader resource view (SRV) heap
     ComPtr<ID3D12DescriptorHeap> srvHeap;
-    uint32_t desSize;
+    ComPtr<ID3D12DescriptorHeap> dsvHeap;
+    uint32_t rtvDesSize;
+    uint32_t srvDesSize;
+    uint32_t dsvDesSize;
     ComPtr<ID3D12PipelineState> pipelineState;
     // ComPtr<ID3D12GraphicsCommandList> cmdList;
     HANDLE fenceEvent;
     ComPtr<ID3D12Fence> fence;
     UINT64 fenceValue;
-    bool useWarpDevice = false;
+    // bool useWarpDevice = false;
 
     ComPtr<ID3D12RootSignature> rootSignature;
 

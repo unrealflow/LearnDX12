@@ -25,7 +25,7 @@ protected:
         MSG msg = {};
         while (msg.message != WM_QUIT)
         {
-            cmd.Submit();
+            cmd.Submit();           
             // Process any messages in the queue.
             if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {
@@ -47,7 +47,9 @@ public:
         base->height = height;
         base->name = winName;
         base->imageIndex = 0;
-        base->desSize = 0;
+        base->rtvDesSize = 0;
+        base->srvDesSize = 0;
+        base->dsvDesSize = 0;
     }
     ~SkApp()
     {

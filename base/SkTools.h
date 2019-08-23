@@ -70,3 +70,9 @@ inline std::string GetAssetFullPath(std::string assetName)
     std::cout << path << std::endl;
     return path;
 }
+static auto StartTime= std::chrono::steady_clock::now();
+inline float GetMilliTime()
+{
+    auto fp=std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::microseconds>(fp-StartTime).count()/1000.0f;
+}

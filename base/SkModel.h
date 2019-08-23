@@ -10,8 +10,8 @@
 //     aiVector3D { x, x, x }
 // #define vec2(x) \
 //     aiVector2D { x, x }
-#define vec3 aiVector3D
-#define vec2 aiVector2D
+#define vec3 Vector3
+#define vec2 Vector2
 class SkModel
 {
 
@@ -95,7 +95,7 @@ public:
 
 private:
     SkBase *base;
-    static const int defaultFlags = aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices |aiProcess_MakeLeftHanded | aiProcess_GenSmoothNormals;
+    static const int defaultFlags = aiProcess_ConvertToLeftHanded| aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
 
 public:
     SkMesh mesh;

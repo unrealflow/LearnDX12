@@ -25,17 +25,17 @@ private:
         ComPtr<IDXGIFactory4> factory;
         SK_CHECK(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory)));
 
-        if (base->useWarpDevice)
-        {
-            ComPtr<IDXGIAdapter> warpAdapter;
-            SK_CHECK(factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)));
+        // if (base->useWarpDevice)
+        // {
+        //     ComPtr<IDXGIAdapter> warpAdapter;
+        //     SK_CHECK(factory->EnumWarpAdapter(IID_PPV_ARGS(&warpAdapter)));
 
-            SK_CHECK(D3D12CreateDevice(
-                warpAdapter.Get(),
-                D3D_FEATURE_LEVEL_11_0,
-                IID_PPV_ARGS(&base->device)));
-        }
-        else
+        //     SK_CHECK(D3D12CreateDevice(
+        //         warpAdapter.Get(),
+        //         D3D_FEATURE_LEVEL_11_0,
+        //         IID_PPV_ARGS(&base->device)));
+        // }
+        // else
         {
             ComPtr<IDXGIAdapter1> hardwareAdapter;
             GetHardwareAdapter(factory.Get(), &hardwareAdapter);
@@ -90,7 +90,19 @@ private:
             srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
             SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&base->srvHeap)));
 
-            base->desSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            // D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+            // srvHeapDesc.NumDescriptors = 1;
+            // srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+            // srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            // SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&base->srvHeap)));
+
+            base->rtvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+            base->srvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+            // base->dsvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+            fprintf(stderr,"base->rtvDesSize:%d...\n",base->rtvDesSize);
+            fprintf(stderr,"base->srvDesSize:%d...\n",base->srvDesSize);
+            // fprintf(stderr,"base->dsvDesSize:%d...\n",base->dsvDesSize);
+            
         }
 
         // Create frame resources.
@@ -103,7 +115,7 @@ private:
             {
                 SK_CHECK(base->swapChain->GetBuffer(n, IID_PPV_ARGS(&base->renderTargets[n])));
                 base->device->CreateRenderTargetView(base->renderTargets[n].Get(), nullptr, rtvHandle);
-                rtvHandle.Offset(1, base->desSize);
+                rtvHandle.Offset(1, base->rtvDesSize);
             }
         }
 
@@ -123,7 +135,6 @@ private:
             if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
             {
                 // Don't select the Basic Render Driver adapter.
-                // If you want a software adapter, pass in "/warp" on the command line.
                 continue;
             }
 
