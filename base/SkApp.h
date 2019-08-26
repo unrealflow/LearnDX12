@@ -11,11 +11,13 @@ protected:
     SkWin32 win;
     SkPipeline pipeline;
     SkCmd cmd;
+    SkAgent agent;
     void Init()
     {
         win.Init(base);
         win.InitWindow();
         pipeline.Init(base); 
+        agent.Init(base);
         cmd.Init(base);
         Setup();
     } 

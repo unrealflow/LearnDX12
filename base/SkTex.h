@@ -1,11 +1,13 @@
 ﻿#pragma once
 #include "SkBase.h"
+#include "SkAgent.h"
 #include "stb_image.h"
 class SkTex
 {
 private:
     static const UINT TexturePixelSize = 4;
-    SkBase*base;
+    SkBase * base;
+    SkAgent * agent;
 public:
     unsigned char *data;
     std::vector<UINT8> test_data;
@@ -15,9 +17,11 @@ public:
     D3D12_RESOURCE_DESC textureDesc = {};
     ComPtr<ID3D12Resource> texture;
     ComPtr<ID3D12Resource> textureUploadHeap;
-    void Init(SkBase *initBase,std::string path)
+    void Init(SkAgent*initAgent,std::string path)
     {
-        base=initBase;
+        agent=initAgent;
+        base=agent->GetBase();
+        // base=initBase;
         int _width, _height;
         this->data = stbi_load(path.c_str(), &_width, &_height, &nrChannels, 4);
         this->width = static_cast<uint32_t>(_width);
@@ -72,12 +76,12 @@ public:
         srvDesc.Texture2D.MipLevels = 1;
         base->device->CreateShaderResourceView(texture.Get(), &srvDesc, base->srvHeap->GetCPUDescriptorHandleForHeapStart());
         {
-            auto cmd=base->BeginCmd();
+            auto cmd=agent->BeginCmd();
             UpdateSubresources(cmd.Get(), texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);
 
             cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
             
-            base->FlushCmd(cmd);
+            agent->FlushCmd(cmd);
         }
     }
     void InitCheckerboard()

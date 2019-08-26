@@ -94,7 +94,8 @@ public:
     };
 
 private:
-    SkBase *base;
+    // SkBase *base;
+    SkAgent *agent;
     static const int defaultFlags = aiProcess_ConvertToLeftHanded| aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
 
 public:
@@ -110,10 +111,11 @@ public:
         vec3 size;
     } dim;
 
-    void Init(SkBase *initBase)
+    void Init(SkAgent*initAgent)
     {
-        base = initBase;
-        mesh.Init(base);
+        // base = initBase;
+        agent=initAgent;
+        mesh.Init(agent);
         // matSet.Init(mem);
         layout = {{
             VERTEX_COMPONENT_POSITION,
@@ -313,9 +315,9 @@ public:
                     const aiFace &Face = paiMesh->mFaces[j];
                     if (Face.mNumIndices != 3)
                         continue;
-                    mesh.indexData.push_back(indexBase+ Face.mIndices[0]);
-                    mesh.indexData.push_back(indexBase+ Face.mIndices[1]);
-                    mesh.indexData.push_back(indexBase+ Face.mIndices[2]);
+                    mesh.indexData.push_back(mesh.subMeshes[i].vertexBase + Face.mIndices[0]);
+                    mesh.indexData.push_back(mesh.subMeshes[i].vertexBase + Face.mIndices[1]);
+                    mesh.indexData.push_back(mesh.subMeshes[i].vertexBase + Face.mIndices[2]);
                     mesh.subMeshes[i].indexCount += 3;
                     mesh.indexCount += 3;
                 }

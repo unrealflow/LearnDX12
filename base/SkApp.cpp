@@ -4,26 +4,29 @@
 #include "SkTex.h"
 #include "SkModel.h"
 #include "SkController.h"
-// SkMesh mesh;
+#include "SkAgent.h"
+SkMesh mesh;
 SkTex tex;
 SkModel model;
 SkController con;
 void SkApp::Setup()
 {
-    // mesh.Init(this->base);
+    // mesh.Init(&agent);
     // std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
     // mesh.SetupTriangle(inputDescs);
-    model.Init(this->base);
+    model.Init(&agent);
     model.ImportModel(GetAssetFullPath("model/vk.obj"));
-    tex.Init(base,GetAssetFullPath("texture/pic.jpg"));
+    tex.Init(&agent,GetAssetFullPath("texture/pic.jpg"));
     model.mesh.Setup();
-    con.Init(base);
+    con.Init(&agent);
    
     // tex.InitCheckerboard();
     pipeline.Setup(model.inputDescs);
+    // pipeline.Setup(inputDescs);
     tex.Setup(); 
     con.Setup();
     cmd.AddConstBuf(1,&con.uniBuf);
     cmd.AddMesh(&model.mesh);
+    // cmd.AddMesh(&mesh);
     cmd.BuildCmdLists();
 }

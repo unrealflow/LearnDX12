@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "SkBase.h"
+#include "SkAgent.h"
 struct SkSubMesh
 {
     uint32_t vertexBase;
@@ -10,7 +11,8 @@ struct SkSubMesh
 class SkMesh
 {
 private:
-    SkBase *base;
+    // SkBase *base;
+    SkAgent *agent;
 
 public:
     // ComPtr<ID3D12Resource> vertexBuf;
@@ -25,9 +27,10 @@ public:
     std::vector<float> vertexData;
     std::vector<uint32_t> indexData;
     std::vector<SkSubMesh> subMeshes;
-    void Init(SkBase *initBase)
+    void Init(SkAgent *initAgent)
     {
-        base = initBase;
+        // base = initBase;
+        agent=initAgent;
         subMeshes.clear();
         vertexData.clear();
         indexData.clear();
@@ -38,24 +41,24 @@ public:
         struct Vertex
         {
             Vector3 position;
-            Vector3 color;
+            Vector3 normal;
             Vector2 uv;
         };
         inputDescs = {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-            {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(Vertex, color), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+            {"NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(Vertex, normal), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
             {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(Vertex, uv), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}};
         {
             // Define the geometry for a triangle.
             Vertex triangleVertices[] =
                 {
-                    {{0.0f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-                    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}};
+                    {{0.0f, 0.5f, -0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
+                    {{0.5f, -0.5f, -0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+                    {{-0.5f, -0.5f, -0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}};
             this->vertexCount = 3;
             const UINT vertexBufferSize = sizeof(triangleVertices);
 
-            SK_CHECK(base->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
+            SK_CHECK(agent->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
                                         D3D12_HEAP_FLAG_NONE,
                                         vertexBufferSize,
                                         D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -76,7 +79,7 @@ public:
     void Setup()
     {
         uint32_t vertexBufferSize = (uint32_t)vertexData.size() * sizeof(float);
-        SK_CHECK(base->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
+        SK_CHECK(agent->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
                                     D3D12_HEAP_FLAG_NONE,
                                     vertexBufferSize,
                                     D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -91,7 +94,7 @@ public:
         vertexBufView.SizeInBytes = vertexBuf.bufSize;
 
         uint32_t indexBufferSize = (uint32_t)indexData.size() * sizeof(uint32_t);
-        SK_CHECK(base->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
+        SK_CHECK(agent->CreateBuffer(D3D12_HEAP_TYPE_UPLOAD,
                                     D3D12_HEAP_FLAG_NONE,
                                     indexBufferSize,
                                     D3D12_RESOURCE_STATE_GENERIC_READ,
