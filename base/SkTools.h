@@ -89,6 +89,10 @@ inline void Show(Vector4 &v)
 {
     fprintf(stderr, "\t[%f\t%f\t%f\t%f]\n", v.x, v.y, v.z, v.w);
 }
+inline void Show(Vector3 &v)
+{
+    fprintf(stderr, "\t[%f\t%f\t%f]\n", v.x, v.y, v.z);
+}
 inline Vector4 Mul(Vector4 &v, Matrix &m)
 {
     Vector4 r;

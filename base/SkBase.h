@@ -1,9 +1,11 @@
 ﻿#pragma once
 #include "SkTools.h"
-
+#include "SkCamera.h"
 class SkBase
 {
 public:
+    float timer;
+    float delta;
     uint32_t width;
     uint32_t height;
     std::string name;
@@ -27,7 +29,7 @@ public:
     uint32_t dsvDesSize;
     ComPtr<ID3D12PipelineState> pipelineState;
     // ComPtr<ID3D12GraphicsCommandList> cmdList;
-
+    SkCamera cam;
     // bool useWarpDevice = false;
 
     ComPtr<ID3D12RootSignature> rootSignature;
@@ -40,5 +42,9 @@ public:
         }
         return hwnd;
     }
-
+};
+class SkCallback
+{
+public:
+    virtual void WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 };

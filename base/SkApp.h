@@ -4,6 +4,7 @@
 #include "SkPipeline.h"
 #include "SkCmd.h"
 #include "SkMesh.h"
+#include "SkController.h"
 class SkApp
 {
 protected:
@@ -12,22 +13,30 @@ protected:
     SkPipeline pipeline;
     SkCmd cmd;
     SkAgent agent;
+    SkController con;
     void Init()
     {
         win.Init(base);
         win.InitWindow();
-        pipeline.Init(base); 
+        pipeline.Init(base);
         agent.Init(base);
         cmd.Init(base);
+        con.Init(&agent);
         Setup();
-    } 
+        win.Register(&con);
+    }
     void Setup();
+    void Draw();
     void Loop()
     {
         MSG msg = {};
+        float lastTime=GetMilliTime();
         while (msg.message != WM_QUIT)
         {
-            cmd.Submit();           
+            base->timer=GetMilliTime();
+            base->delta=base->timer-lastTime;
+            lastTime=base->timer;
+            Draw();
             // Process any messages in the queue.
             if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
             {

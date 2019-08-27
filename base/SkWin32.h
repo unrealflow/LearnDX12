@@ -1,17 +1,35 @@
 ﻿#pragma once
 #include "SkBase.h"
-
+class SkWin32;
+static SkWin32 *gWin32 = nullptr;
 class SkWin32
 {
 private:
     SkBase *base;
+    std::vector<SkCallback *> callbacks;
+    void WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+    {
+        for (auto &&c : callbacks)
+        {
+            c->WinProc(hWnd, uMsg,  wParam,  lParam);
+        }
+    }
 
 public:
+    SkWin32()
+    {
+        gWin32 = this;
+    }
     void Init(SkBase *initBase)
     {
         base = initBase;
-        // InitWindow();
+        callbacks.clear();
     }
+    void Register(SkCallback *call)
+    {
+        callbacks.push_back(call);
+    }
+
     void InitWindow()
     {
         base->hInstance = GetModuleHandle(NULL);
@@ -19,7 +37,7 @@ public:
         WNDCLASSEX windowClass = {};
         windowClass.cbSize = sizeof(WNDCLASSEX);
         windowClass.style = CS_HREDRAW | CS_VREDRAW;
-        windowClass.lpfnWndProc = WindowProc;
+        windowClass.lpfnWndProc = StaticWinProc;
         windowClass.hInstance = base->hInstance;
         windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
         windowClass.lpszClassName = LPCSTR(L"DXSampleClass");
@@ -48,8 +66,13 @@ public:
 
         // Main sample loop.
     }
-    static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+
+    static LRESULT CALLBACK StaticWinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
+        if (nullptr != gWin32)
+        {
+            gWin32->WinProc(hWnd, uMsg, wParam, lParam);
+        }
         switch (uMsg)
         {
         case WM_CLOSE:
@@ -65,6 +88,11 @@ public:
         }
             return 0;
         case WM_KEYDOWN:
+            if (wParam == VK_ESCAPE)
+            {
+                DestroyWindow(hWnd);
+                PostQuitMessage(0);
+            }
             return 0;
         case WM_KEYUP:
             return 0;
@@ -72,6 +100,10 @@ public:
             return 0;
         case WM_DESTROY:
             PostQuitMessage(0);
+            return 0;
+        case WM_LBUTTONDOWN:
+            return 0;
+        case WM_LBUTTONUP:
             return 0;
         default:
             break;

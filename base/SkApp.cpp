@@ -8,7 +8,6 @@
 SkMesh mesh;
 SkTex tex;
 SkModel model;
-SkController con;
 void SkApp::Setup()
 {
     // mesh.Init(&agent);
@@ -18,8 +17,6 @@ void SkApp::Setup()
     model.ImportModel(GetAssetFullPath("model/vk.obj"));
     tex.Init(&agent,GetAssetFullPath("texture/pic.jpg"));
     model.mesh.Setup();
-    con.Init(&agent);
-   
     // tex.InitCheckerboard();
     pipeline.Setup(model.inputDescs);
     // pipeline.Setup(inputDescs);
@@ -29,4 +26,9 @@ void SkApp::Setup()
     cmd.AddMesh(&model.mesh);
     // cmd.AddMesh(&mesh);
     cmd.BuildCmdLists();
+}
+void SkApp::Draw()
+{
+    con.Update();
+    cmd.Submit();
 }
