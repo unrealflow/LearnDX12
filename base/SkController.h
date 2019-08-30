@@ -7,7 +7,6 @@ private:
     SkBase *base = nullptr;
     SkAgent *agent = nullptr;
     SkCamera *cam = nullptr;
-    const float _WalkSpeed = 0.01f;
 
 public:
     SkBuffer uniBuf;
@@ -15,6 +14,8 @@ public:
     {
         Matrix projection;
         Matrix view;
+        float iTime;
+        float upTime;
     } uniformBuffer;
     struct
     {
@@ -65,6 +66,8 @@ public:
         MouseProc();
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
+        uniformBuffer.iTime=base->timer;
+        uniformBuffer.upTime=cam->upTime;
         SK_CHECK(uniBuf.Map());
         memcpy(uniBuf.data, &uniformBuffer, uniBuf.bufSize);
         uniBuf.Unmap();

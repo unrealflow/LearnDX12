@@ -27,6 +27,7 @@ public:
     uint32_t rtvDesSize;
     uint32_t srvDesSize;
     uint32_t dsvDesSize;
+    ComPtr<ID3D12Resource> depthTarget;
     ComPtr<ID3D12PipelineState> pipelineState;
     // ComPtr<ID3D12GraphicsCommandList> cmdList;
     SkCamera cam;

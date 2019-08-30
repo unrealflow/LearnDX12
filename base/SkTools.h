@@ -58,7 +58,7 @@ const std::string AssetsPath = SK_DATA_DIR;
 const std::string AssetsPath = "./";
 #endif
 
-inline std::wstring GetAssetFullPath(LPCWSTR assetName)
+inline std::wstring GetAssetFullPath(std::wstring assetName)
 {
     auto path = wAssetsPath + assetName;
     std::wcout << path << std::endl;
@@ -78,12 +78,12 @@ inline float GetMilliTime()
 }
 inline void Show(Matrix &m)
 {
-    fprintf(stderr,"\t[\n");
+    fprintf(stderr, "\t[\n");
     for (size_t i = 0; i < 4; i++)
     {
         fprintf(stderr, "\t[%f\t%f\t%f\t%f]\n", m.m[i][0], m.m[i][1], m.m[i][2], m.m[i][3]);
     }
-    fprintf(stderr,"\t]\n");
+    fprintf(stderr, "\t]\n");
 }
 inline void Show(Vector4 &v)
 {
@@ -113,6 +113,24 @@ inline Vector4 Mul(Matrix &m, Vector4 &v)
 }
 inline Vector4 DivW(Vector4 &v)
 {
-    v=v/v.w;
+    v = v / v.w;
     return v;
+}
+inline D3D12_STATIC_SAMPLER_DESC InitSampler()
+{
+    D3D12_STATIC_SAMPLER_DESC sampler;
+    sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+    sampler.MipLODBias = 0;
+    sampler.MaxAnisotropy = 0;
+    sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+    sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+    sampler.MinLOD = 0.0f;
+    sampler.MaxLOD = D3D12_FLOAT32_MAX;
+    sampler.ShaderRegister = 0;
+    sampler.RegisterSpace = 0;
+    sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+    return sampler;
 }

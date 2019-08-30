@@ -126,10 +126,6 @@ public:
                 fprintf(stderr, "Draw by Vertices...\n");
             }
         }
-        else
-        {
-            cmd->DrawInstanced(3, 1, 0, 0);
-        }
     }
     void DrawSubMesh(ID3D12GraphicsCommandList *cmd, uint32_t index)
     {

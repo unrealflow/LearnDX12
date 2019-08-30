@@ -6,3 +6,4 @@
 #include "SkController.h"
 #include "SkAgent.h"
 #include "SkCamera.h"
+#include "SkPass.h"

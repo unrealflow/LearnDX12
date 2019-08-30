@@ -90,19 +90,18 @@ private:
             srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
             SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&base->srvHeap)));
 
-            // D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-            // srvHeapDesc.NumDescriptors = 1;
-            // srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-            // srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            // SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&base->srvHeap)));
+            D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+            srvHeapDesc.NumDescriptors = 2;
+            srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            SK_CHECK(base->device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&base->dsvHeap)));
 
             base->rtvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
             base->srvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-            // base->dsvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-            fprintf(stderr,"base->rtvDesSize:%d...\n",base->rtvDesSize);
-            fprintf(stderr,"base->srvDesSize:%d...\n",base->srvDesSize);
-            // fprintf(stderr,"base->dsvDesSize:%d...\n",base->dsvDesSize);
-            
+            base->dsvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+            fprintf(stderr, "base->rtvDesSize:%d...\n", base->rtvDesSize);
+            fprintf(stderr, "base->srvDesSize:%d...\n", base->srvDesSize);
+            fprintf(stderr, "base->dsvDesSize:%d...\n", base->dsvDesSize);
         }
 
         // Create frame resources.
@@ -117,6 +116,32 @@ private:
                 base->device->CreateRenderTargetView(base->renderTargets[n].Get(), nullptr, rtvHandle);
                 rtvHandle.Offset(1, base->rtvDesSize);
             }
+
+            D3D12_RESOURCE_DESC depthDes = {};
+            depthDes.MipLevels = 1;
+            depthDes.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+            depthDes.Width = base->width;
+            depthDes.Height = base->height;
+            depthDes.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+            depthDes.DepthOrArraySize = 1;
+            depthDes.SampleDesc.Count = 1;
+            depthDes.SampleDesc.Quality = 0;
+            depthDes.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+            D3D12_CLEAR_VALUE clearValue = {};
+            clearValue.Format = depthDes.Format;
+            clearValue.DepthStencil = {1.0f, 0};
+            SK_CHECK(base->device->CreateCommittedResource(
+                &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                D3D12_HEAP_FLAG_NONE, &depthDes,
+                D3D12_RESOURCE_STATE_COMMON, &clearValue, IID_PPV_ARGS(&base->depthTarget)));
+
+            D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+            dsvDesc.Format = depthDes.Format;
+            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+            dsvDesc.Texture2D = {0};
+            // TODO :
+            // base->device->CreateDepthStencilView(base->depthTarget.Get(), &dsvDesc, base->dsvHeap->GetCPUDescriptorHandleForHeapStart());
         }
 
         SK_CHECK(base->device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&base->cmdPool)));
@@ -165,26 +190,15 @@ private:
             CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
             ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
-            CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+            std::array<CD3DX12_ROOT_PARAMETER1, 2> rootParameters;
             rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
             rootParameters[1].InitAsConstantBufferView(0);
-            D3D12_STATIC_SAMPLER_DESC sampler = {};
-            sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-            sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-            sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-            sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-            sampler.MipLODBias = 0;
-            sampler.MaxAnisotropy = 0;
-            sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
-            sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-            sampler.MinLOD = 0.0f;
-            sampler.MaxLOD = D3D12_FLOAT32_MAX;
-            sampler.ShaderRegister = 0;
-            sampler.RegisterSpace = 0;
-            sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
             CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-            rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+            rootSignatureDesc.Init_1_1((uint32_t)rootParameters.size(),
+                                       rootParameters.data(), 1,
+                                       &InitSampler(),
+                                       D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
             ComPtr<ID3DBlob> signature;
             ComPtr<ID3DBlob> error;
@@ -224,12 +238,13 @@ private:
             psoDesc.pRootSignature = base->rootSignature.Get();
             psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
             psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-            auto rs =CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+            auto rs = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
             // rs.FillMode=D3D12_FILL_MODE_WIREFRAME;
-            rs.CullMode=D3D12_CULL_MODE_NONE;
+            rs.CullMode = D3D12_CULL_MODE_NONE;
             psoDesc.RasterizerState = rs;
             psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-            psoDesc.DepthStencilState.DepthEnable = FALSE;
+            psoDesc.DepthStencilState.DepthEnable = TRUE;
+            psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC::D3D12_COMPARISON_FUNC_LESS;
             psoDesc.DepthStencilState.StencilEnable = FALSE;
             psoDesc.SampleMask = UINT_MAX;
             psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;

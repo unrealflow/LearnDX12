@@ -10,8 +10,8 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
     endif()
 endif()
 
-add_definitions(-DWIN_MAIN)
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /subsystem:windows") 
+# add_definitions(-DWIN_MAIN)
+# SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /subsystem:windows") 
 
 set(LearnDX12Project ${PROJECT_SOURCE_DIR})
 set(INCLUDE ${LearnDX12Project}/include ${LearnDX12Project}/base ${LearnDX12Project}/DirectXTK/Inc)

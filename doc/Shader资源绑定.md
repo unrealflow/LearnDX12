@@ -1,4 +1,4 @@
-# Shader资源使用
+# Shader资源绑定
 
 ## 顶点、索引数据
 
@@ -7,8 +7,10 @@
 3. 根据数据的布局生成`D3D12_INPUT_ELEMENT_DESC`
 4. 根据`std::vector<D3D12_INPUT_ELEMENT_DESC>`创建`ID3D12PipelineState`
 5. 修改shader，使之与顶点、索引数据相匹配
+6. cmd设置顶点、索引缓冲，绘制
 
 ## 描述符
+
 ### 使用描述符表
 1. 确定需求的**容量大小**，创建所需的描述符堆
 2. 确定根签名的**布局、容量**，序列化、创建根签名

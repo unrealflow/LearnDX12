@@ -12,6 +12,8 @@
 #include "d3dx12.h"
 #include <chrono>
 #include <string>
+#include <vector>
+#include <array>
 #include <wrl.h>
 #include <shellapi.h>
 #include <SimpleMath.h>

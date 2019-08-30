@@ -94,6 +94,10 @@ public:
             {
                 meshes[mc]->Draw(this->cmdLists[i].Get());
             }
+            if(0==meshes.size())
+            {
+                this->cmdLists[i]->DrawInstanced(3,1,0,0);
+            }
             // Indicate that the back buffer will now be used to present.
             this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
