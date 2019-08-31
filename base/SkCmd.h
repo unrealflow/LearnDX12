@@ -2,7 +2,7 @@
 #include "SkBase.h"
 #include "SkMesh.h"
 #include "SkFence.h"
-
+#include "SkPass.h"
 class SkCmd
 {
 private:
@@ -11,6 +11,7 @@ private:
     std::vector<SkMesh *> meshes;
     std::vector<std::pair<uint32_t, SkBuffer *>> buffers;
     std::vector<SkFence> fences;
+    std::vector<SkPass *> passes;
 
     void CreateFence()
     {
@@ -34,6 +35,10 @@ public:
     void AddMesh(SkMesh *mesh)
     {
         meshes.emplace_back(mesh);
+    }
+    void AddPass(SkPass *pass)
+    {
+        this->passes.push_back(pass);
     }
     void AddConstBuf(uint32_t paramIndex, SkBuffer *buf)
     {
@@ -62,44 +67,37 @@ public:
             // However, when ExecuteCommandList() is called on a particular command
             // list, that command list can then be reset at any time and must be before
             // re-recording.
-
             if (this->cmdLists[i].Get() == nullptr)
             {
                 fprintf(stderr, "Nullptr...\n");
             }
-            SK_CHECK(this->cmdLists[i]->Reset(base->cmdPool.Get(), base->pipelineState.Get()));
-            this->cmdLists[i]->SetGraphicsRootSignature(base->rootSignature.Get());
-
-            ID3D12DescriptorHeap *ppHeaps[] = {base->srvHeap.Get()};
-            this->cmdLists[i]->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-            this->cmdLists[i]->SetGraphicsRootDescriptorTable(0, base->srvHeap->GetGPUDescriptorHandleForHeapStart());
-            for (size_t b = 0; b < buffers.size(); b++)
+            for (size_t p = 0; p < passes.size(); p++)
             {
-                this->cmdLists[i]->SetGraphicsRootConstantBufferView(buffers[b].first, buffers[b].second->buf->GetGPUVirtualAddress());
+                passes[p]->CmdSet(this->cmdLists[i]);
+                this->cmdLists[i]->RSSetViewports(1, &m_viewport);
+                this->cmdLists[i]->RSSetScissorRects(1, &m_scissorRect);
+
+                // Indicate that the back buffer will be used as a render target.
+                this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+                CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart(), i, base->rtvDesSize);
+                this->cmdLists[i]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+                // Record commands.
+                const float clearColor[] = {0.0f, 0.1f, 0.1f, 1.0f};
+                this->cmdLists[i]->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+
+                for (size_t mc = 0; mc < meshes.size(); mc++)
+                {
+                    meshes[mc]->Draw(this->cmdLists[i].Get());
+                }
+                if (0 == meshes.size())
+                {
+                    this->cmdLists[i]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                    this->cmdLists[i]->DrawInstanced(3, 1, 0, 0);
+                }
+                // Indicate that the back buffer will now be used to present.
+                this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
             }
-
-            this->cmdLists[i]->RSSetViewports(1, &m_viewport);
-            this->cmdLists[i]->RSSetScissorRects(1, &m_scissorRect);
-
-            // Indicate that the back buffer will be used as a render target.
-            this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart(), i, base->rtvDesSize);
-            this->cmdLists[i]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-            // Record commands.
-            const float clearColor[] = {0.0f, 0.2f, 0.4f, 1.0f};
-            this->cmdLists[i]->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-            for (size_t mc = 0; mc < meshes.size(); mc++)
-            {
-                meshes[mc]->Draw(this->cmdLists[i].Get());
-            }
-            if(0==meshes.size())
-            {
-                this->cmdLists[i]->DrawInstanced(3,1,0,0);
-            }
-            // Indicate that the back buffer will now be used to present.
-            this->cmdLists[i]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(base->renderTargets[i].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
             SK_CHECK(this->cmdLists[i]->Close());
         }
@@ -110,10 +108,11 @@ public:
         fences[base->imageIndex].Wait();
         ID3D12CommandList *ppCommandLists[] = {this->cmdLists[base->imageIndex].Get()};
         base->cmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
+    }
+    void Present()
+    {
         // Present the frame.
         SK_CHECK(base->swapChain->Present(1, 0));
-
         fences[base->imageIndex].Signal();
         base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
     }

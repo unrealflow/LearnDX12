@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <unordered_map>
+#include <set>
 #include <wrl.h>
 #include <shellapi.h>
 #include <SimpleMath.h>

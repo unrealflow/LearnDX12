@@ -5,18 +5,60 @@ class SkPass
 {
 private:
     SkBase *base = nullptr;
+    std::vector<ID3D12DescriptorHeap *> pHeaps;
+    std::unordered_map<uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE> tableDescs;
+    std::unordered_map<uint32_t, D3D12_GPU_VIRTUAL_ADDRESS> constDescs;
 
 public:
     SkPass() {}
     ~SkPass() {}
     ComPtr<ID3D12PipelineState> pipeline;
     ComPtr<ID3D12RootSignature> root;
+
     void Init(SkBase *initBase)
     {
         base = initBase;
+        pHeaps.clear();
+        tableDescs.clear();
+        constDescs.clear();
     }
-    void BuildCmd(ComPtr<ID3D12GraphicsCommandList> &cmd)
+    void Add(uint32_t index, ID3D12DescriptorHeap *heap, int offset = 0)
     {
+        pHeaps.push_back(heap);
+        if (0 == offset)
+        {
+            tableDescs[index] = heap->GetGPUDescriptorHandleForHeapStart();
+        }
+        else
+        {
+            CD3DX12_GPU_DESCRIPTOR_HANDLE handle{heap->GetGPUDescriptorHandleForHeapStart(), offset, base->srvDesSize};
+            tableDescs[index] = handle;
+        }
+    }
+    void Add(uint32_t index, D3D12_GPU_VIRTUAL_ADDRESS address)
+    {
+        constDescs[index] = address;
+    }
+    void CmdSet(ComPtr<ID3D12GraphicsCommandList> cmd, bool reset = true)
+    {
+        if (reset)
+        {
+            cmd->Reset(base->cmdPool.Get(), pipeline.Get());
+        }
+        else
+        {
+            cmd->SetPipelineState(pipeline.Get());
+        }
+        cmd->SetGraphicsRootSignature(root.Get());
+        cmd->SetDescriptorHeaps(static_cast<uint32_t>(pHeaps.size()), pHeaps.data());
+        for (auto desc = tableDescs.begin(); desc != tableDescs.end(); desc++)
+        {
+            cmd->SetGraphicsRootDescriptorTable(desc->first, desc->second);
+        }
+        for (auto desc = constDescs.begin(); desc != constDescs.end(); desc++)
+        {
+            cmd->SetGraphicsRootConstantBufferView(desc->first, desc->second);
+        }
     }
     void CreateRoot(std::vector<CD3DX12_ROOT_PARAMETER1> &rootParameters) //,std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
     {
@@ -44,8 +86,8 @@ public:
                      error);
         SK_CHECK(base->device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&this->root)));
     }
-    //"VSMain", "vs_5_1"
-    void CreatePipeline(std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs, std::wstring VSPath, std::wstring PSPath)
+    //"VSMain","PSMain","vs_5_1"
+    void CreatePipeline(std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs, std::wstring Shader)
     {
         // Create the pipeline state, which includes compiling and loading shaders.
 
@@ -60,13 +102,13 @@ public:
         // #endif
 
         SK_CHECK_MSG(D3DCompileFromFile(
-                         GetAssetFullPath(VSPath).c_str(),
+                         GetAssetFullPath(Shader).c_str(),
                          nullptr, nullptr, "VSMain", "vs_5_1",
                          compileFlags, 0, &vertexShader, &errorMessage),
                      errorMessage);
 
         SK_CHECK_MSG(D3DCompileFromFile(
-                         GetAssetFullPath(PSPath).c_str(),
+                         GetAssetFullPath(Shader).c_str(),
                          nullptr, nullptr, "PSMain", "ps_5_1",
                          compileFlags, 0, &pixelShader, &errorMessage),
                      errorMessage);

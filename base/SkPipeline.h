@@ -93,7 +93,7 @@ private:
             D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
             srvHeapDesc.NumDescriptors = 2;
             srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
             SK_CHECK(base->device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&base->dsvHeap)));
 
             base->rtvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
