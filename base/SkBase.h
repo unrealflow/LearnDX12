@@ -13,6 +13,7 @@ public:
     HINSTANCE hInstance;
     int iCmdShow;
     const uint32_t imageCount = 2;
+    const DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
     uint32_t imageIndex;
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> device;

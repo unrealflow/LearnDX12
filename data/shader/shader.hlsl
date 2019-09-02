@@ -1,19 +1,12 @@
-//*********************************************************
-//
-// Copyright (c) Microsoft. All rights reserved.
-// This code is licensed under the MIT License (MIT).
-// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
-// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
-// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
-// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
-//
-//*********************************************************
-
 struct PSInput
 {
     float4 position : SV_POSITION;
     float4 normal : NORMAL;
     float2 uv: TEXCOORD;
+};
+struct PSOutput
+{
+    float4 rt0;
 };
 struct UniformBuffer
 {
@@ -42,8 +35,9 @@ PSInput VSMain(
     return result;
 }
 
-float4 PSMain(PSInput input) : SV_TARGET
+PSOutput PSMain(PSInput input)
 {
-    return g_texture.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
-    // return float4(buf.color,1.0);
+    PSOutput p;
+    p.rt0 = g_texture.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    return p;
 }

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "SkBase.h"
+#include "SkTarget.h"
 
 class SkPass
 {
@@ -8,6 +9,7 @@ private:
     std::vector<ID3D12DescriptorHeap *> pHeaps;
     std::unordered_map<uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE> tableDescs;
     std::unordered_map<uint32_t, D3D12_GPU_VIRTUAL_ADDRESS> constDescs;
+    SkTarget *RT;
 
 public:
     SkPass() {}
@@ -22,7 +24,7 @@ public:
         tableDescs.clear();
         constDescs.clear();
     }
-    void Add(uint32_t index, ID3D12DescriptorHeap *heap, int offset = 0)
+    void AddDesc(uint32_t index, ID3D12DescriptorHeap *heap, int offset = 0)
     {
         pHeaps.push_back(heap);
         if (0 == offset)
@@ -35,20 +37,17 @@ public:
             tableDescs[index] = handle;
         }
     }
-    void Add(uint32_t index, D3D12_GPU_VIRTUAL_ADDRESS address)
+    void AddDesc(uint32_t index, D3D12_GPU_VIRTUAL_ADDRESS address)
     {
         constDescs[index] = address;
     }
-    void CmdSet(ComPtr<ID3D12GraphicsCommandList> cmd, bool reset = true)
+
+    void CmdSet(ComPtr<ID3D12GraphicsCommandList> cmd, uint32_t index)
     {
-        if (reset)
-        {
-            cmd->Reset(base->cmdPool.Get(), pipeline.Get());
-        }
-        else
-        {
-            cmd->SetPipelineState(pipeline.Get());
-        }
+        CD3DX12_VIEWPORT m_viewport{0.0f, 0.0f, static_cast<float>(base->width), static_cast<float>(base->height)};
+        CD3DX12_RECT m_scissorRect{0, 0, static_cast<LONG>(base->width), static_cast<LONG>(base->height)};
+
+        cmd->SetPipelineState(pipeline.Get());
         cmd->SetGraphicsRootSignature(root.Get());
         cmd->SetDescriptorHeaps(static_cast<uint32_t>(pHeaps.size()), pHeaps.data());
         for (auto desc = tableDescs.begin(); desc != tableDescs.end(); desc++)
@@ -59,10 +58,31 @@ public:
         {
             cmd->SetGraphicsRootConstantBufferView(desc->first, desc->second);
         }
-    }
-    void CreateRoot(std::vector<CD3DX12_ROOT_PARAMETER1> &rootParameters) //,std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
-    {
+        cmd->RSSetViewports(1, &m_viewport);
+        cmd->RSSetScissorRects(1, &m_scissorRect);
 
+        // Indicate that the back buffer will be used as a render target.
+        RT->PreBarrier(cmd, index);
+        auto handles = RT->Get(index);
+        cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, nullptr);
+        // Record commands.
+        // if (0 == meshes[p].size())
+        {
+            cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            cmd->DrawInstanced(3, 1, 0, 0);
+            // }
+            // else
+            // {
+            //     for (uint32_t mc = 0; mc < meshes.size(); mc++)
+            //     {
+            //         meshes[p][mc]->Draw(cmd.Get());
+            //     }
+        }
+        RT->AftBarrier(cmd, index);
+    }
+    void CreateRoot(std::vector<CD3DX12_ROOT_PARAMETER1> &rootParameters, SkTarget *rt) //,std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
+    {
+        this->RT = rt;
         // Create an empty root signature.
         D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
 
@@ -129,8 +149,11 @@ public:
         psoDesc.DepthStencilState.StencilEnable = FALSE;
         psoDesc.SampleMask = UINT_MAX;
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psoDesc.NumRenderTargets = 1;
-        psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+        psoDesc.NumRenderTargets = RT->Size();
+        for (uint32_t i = 0; i < RT->Size(); i++)
+        {
+            psoDesc.RTVFormats[i] = RT->GetFormat(i);
+        }
         psoDesc.SampleDesc.Count = 1;
         SK_CHECK(base->device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&this->pipeline)));
     }

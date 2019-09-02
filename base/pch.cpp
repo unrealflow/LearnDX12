@@ -7,3 +7,5 @@
 #include "SkAgent.h"
 #include "SkCamera.h"
 #include "SkPass.h"
+#include "SkTarget.h"
+#include "SkHeap.h"
