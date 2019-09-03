@@ -1,10 +1,11 @@
 ﻿#pragma once
 #include "SkBase.h"
-
+#include "SkHeap.h"
 class SkPipeline
 {
 private:
     SkBase *base;
+    SkHeap heap;
     void InitSwapChain()
     {
         uint32_t dxgiFactoryFlags = 0;
@@ -75,46 +76,18 @@ private:
         SK_CHECK(swapChain.As(&base->swapChain));
         base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
 
-        // Create descriptor heaps.
-        {
-            // Describe and create a render target view (RTV) descriptor heap.
-            D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-            rtvHeapDesc.NumDescriptors = base->imageCount + 5;
-            rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-            rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-            SK_CHECK(base->device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&base->rtvHeap)));
-
-            D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-            srvHeapDesc.NumDescriptors = 5;
-            srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-            SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&base->srvHeap)));
-
-            D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-            srvHeapDesc.NumDescriptors = 2;
-            srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-            srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-            SK_CHECK(base->device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&base->dsvHeap)));
-
-            base->rtvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-            base->srvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-            base->dsvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-            fprintf(stderr, "base->rtvDesSize:%d...\n", base->rtvDesSize);
-            fprintf(stderr, "base->srvDesSize:%d...\n", base->srvDesSize);
-            fprintf(stderr, "base->dsvDesSize:%d...\n", base->dsvDesSize);
-        }
+        heap.Init(base,base->imageCount+5,5);
 
         // Create frame resources.
         {
-            CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart());
-
+            // CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart());
             base->renderTargets.resize(base->imageCount);
             // Create a RTV for each frame.
-            for (UINT n = 0; n < base->imageCount; n++)
+            for (uint32_t n = 0; n < base->imageCount; n++)
             {
                 SK_CHECK(base->swapChain->GetBuffer(n, IID_PPV_ARGS(&base->renderTargets[n])));
-                base->device->CreateRenderTargetView(base->renderTargets[n].Get(), nullptr, rtvHandle);
-                rtvHandle.Offset(1, base->rtvDesSize);
+                base->device->CreateRenderTargetView(base->renderTargets[n].Get(), nullptr, heap.GetRTV(n));
+                // rtvHandle.Offset(1, base->rtvDesSize);
             }
 
             D3D12_RESOURCE_DESC depthDes = {};

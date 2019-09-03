@@ -8,7 +8,7 @@ class SkCmd
 {
 private:
     SkBase *base;
-    std::vector<ComPtr<ID3D12GraphicsCommandList>> cmdLists;
+    std::vector<ComPtr<ID3D12GraphicsCommandList4>> cmdLists;
     std::vector<SkFence> fences;
     // std::unordered_map<uint32_t,std::vector<SkMesh *>> meshes;
     std::vector<SkPass *> passes;

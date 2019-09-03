@@ -38,3 +38,4 @@ struct SkBuffer
         buf->Unmap(0,nullptr);
     }
 };
+class SkHeap;

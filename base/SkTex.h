@@ -32,7 +32,7 @@ public:
             throw std::runtime_error("Failed to load texture in " + path);
         }
     }
-    void Setup()
+    void Setup(int binding)
     {
         textureDesc.MipLevels = 1;
         textureDesc.Format = this->format;
@@ -74,7 +74,7 @@ public:
         srvDesc.Format = textureDesc.Format;
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Texture2D.MipLevels = 1;
-        base->device->CreateShaderResourceView(texture.Get(), &srvDesc, base->srvHeap->GetCPUDescriptorHandleForHeapStart());
+        base->device->CreateShaderResourceView(texture.Get(), &srvDesc, base->heap->GetSRV(binding));
         {
             auto cmd=agent->BeginCmd();
             UpdateSubresources(cmd.Get(), texture.Get(), textureUploadHeap.Get(), 0, 0, 1, &textureData);

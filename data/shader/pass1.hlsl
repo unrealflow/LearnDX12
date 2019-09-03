@@ -8,10 +8,17 @@ struct PSOutput
     float4 rt0 : SV_TARGET0;
     // float4 rt1 : SV_TARGET1;
 };
-
+struct UniformBuffer
+{
+    float4x4 projection;
+    float4x4 view;
+    float iTime;
+    float upTime;
+};
 Texture2D g_texture : register(t0);
 Texture2D g_texture1 : register(t1);
 SamplerState g_sampler : register(s0);
+ConstantBuffer<UniformBuffer> buf : register(b0);
 PSInput VSMain(
     uint ID :SV_VERTEXID)
 {

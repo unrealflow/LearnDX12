@@ -33,7 +33,7 @@ public:
         }
         else
         {
-            CD3DX12_GPU_DESCRIPTOR_HANDLE handle{heap->GetGPUDescriptorHandleForHeapStart(), offset, base->srvDesSize};
+            CD3DX12_GPU_DESCRIPTOR_HANDLE handle{heap->GetGPUDescriptorHandleForHeapStart(), offset, base->heap->srvDesSize};
             tableDescs[index] = handle;
         }
     }

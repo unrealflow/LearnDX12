@@ -58,9 +58,9 @@ public:
         base->height = height;
         base->name = winName;
         base->imageIndex = 0;
-        base->rtvDesSize = 0;
-        base->srvDesSize = 0;
-        base->dsvDesSize = 0;
+        // base->rtvDesSize = 0;
+        // base->srvDesSize = 0;
+        // base->dsvDesSize = 0;
     }
     ~SkApp()
     {

@@ -34,10 +34,7 @@ public:
     }
     virtual std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> Get(int index) override
     {
-        return {CD3DX12_CPU_DESCRIPTOR_HANDLE{
-            base->rtvHeap->GetCPUDescriptorHandleForHeapStart(),
-            index,
-            base->rtvDesSize}};
+        return{base->heap->GetRTV(index)};
     }
     virtual void PreBarrier(ComPtr<ID3D12GraphicsCommandList> cmd, uint32_t index)
     {
@@ -71,7 +68,7 @@ public:
         textureDesc.Format = this->format;
         textureDesc.Width = base->width;
         textureDesc.Height = base->height;
-        textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        textureDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         textureDesc.DepthOrArraySize = 1;
         textureDesc.SampleDesc.Count = 1;
         textureDesc.SampleDesc.Quality = 0;

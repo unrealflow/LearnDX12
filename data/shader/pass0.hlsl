@@ -6,11 +6,18 @@ struct PSInput
 struct PSOutput
 {
     float4 rt0 : SV_TARGET0;
-    float4 rt1 : SV_TARGET1;
+    // float4 rt1 : SV_TARGET1;
 };
-
+struct UniformBuffer
+{
+    float4x4 projection;
+    float4x4 view;
+    float iTime;
+    float upTime;
+};
 Texture2D g_texture : register(t0);
 SamplerState g_sampler : register(s0);
+ConstantBuffer<UniformBuffer> buf:register(b0);
 PSInput VSMain(
     uint ID :SV_VERTEXID)
 {
@@ -26,6 +33,6 @@ PSOutput PSMain(PSInput input)
 {
     PSOutput p;
     p.rt0 = g_texture.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
-    p.rt1=p.rt0;
+    // p.rt1=p.rt0;
     return p;
 }

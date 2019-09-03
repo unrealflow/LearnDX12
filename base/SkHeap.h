@@ -10,22 +10,19 @@ private:
     ComPtr<ID3D12DescriptorHeap> rtvHeap;
     ComPtr<ID3D12DescriptorHeap> srvHeap;
     ComPtr<ID3D12DescriptorHeap> dsvHeap;
+
+public:
     uint32_t rtvDesSize;
     uint32_t srvDesSize;
     uint32_t dsvDesSize;
-    uint32_t rtvCount;
-    uint32_t srvCount;
-
-public:
     void Init(SkBase *initBase,
               uint32_t rtvCap,
               uint32_t srvCap)
     {
         base = initBase;
+        base->heap=this;
         this->rtvCap = rtvCap;
         this->srvCap = srvCap;
-        this->rtvCount = 0;
-        this->srvCount = 0;
         D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
         rtvHeapDesc.NumDescriptors = rtvCap;
         rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -48,18 +45,7 @@ public:
         this->srvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         this->dsvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
     }
-    uint32_t AllocSRV(uint32_t _size = 1)
-    {
-        srvCount += _size;
-        SK_N_NULL(srvCount <= srvCap);
-        return srvCount - _size;
-    }
-    uint32_t AllocRTV(uint32_t _size = 1)
-    {
-        rtvCount += _size;
-        SK_N_NULL(rtvCount <= rtvCap);
-        return rtvCount - _size;
-    }
+
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetSRV(int offset)
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE handle{srvHeap->GetCPUDescriptorHandleForHeapStart(), offset, srvDesSize};
