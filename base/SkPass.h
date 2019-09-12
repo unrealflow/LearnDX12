@@ -7,6 +7,7 @@ class SkPass
 private:
     SkBase *base = nullptr;
     std::vector<ID3D12DescriptorHeap *> pHeaps;
+    std::vector<SkMesh *> meshes;
     std::unordered_map<uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE> tableDescs;
     std::unordered_map<uint32_t, D3D12_GPU_VIRTUAL_ADDRESS> constDescs;
     SkTarget *RT;
@@ -21,8 +22,15 @@ public:
     {
         base = initBase;
         pHeaps.clear();
+        meshes.clear();
         tableDescs.clear();
         constDescs.clear();
+    }
+    void AddMesh(SkMesh *mesh)
+    {
+        if (mesh == nullptr)
+            return;
+        meshes.emplace_back(mesh);
     }
     void AddDesc(uint32_t index, ID3D12DescriptorHeap *heap, int offset = 0)
     {
@@ -64,19 +72,25 @@ public:
         // Indicate that the back buffer will be used as a render target.
         RT->PreBarrier(cmd, index);
         auto handles = RT->Get(index);
-        cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, nullptr);
-        // Record commands.
-        // if (0 == meshes[p].size())
+
+        if (0 == meshes.size())
         {
+            cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, nullptr);
+            cmd->ClearRenderTargetView(handles[0], base->clearColor, 0, nullptr);
+            // Record commands.
             cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             cmd->DrawInstanced(3, 1, 0, 0);
-            // }
-            // else
-            // {
-            //     for (uint32_t mc = 0; mc < meshes.size(); mc++)
-            //     {
-            //         meshes[p][mc]->Draw(cmd.Get());
-            //     }
+        }
+        else
+        {
+            cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, &base->heap->GetHeapDSV()->GetCPUDescriptorHandleForHeapStart());
+            cmd->ClearRenderTargetView(handles[0], base->clearColor, 0, nullptr);
+            // Record commands.
+            cmd->ClearDepthStencilView(base->heap->GetHeapDSV()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+            for (uint32_t mc = 0; mc < meshes.size(); mc++)
+            {
+                meshes[mc]->Draw(cmd.Get());
+            }
         }
         RT->AftBarrier(cmd, index);
     }
@@ -106,6 +120,7 @@ public:
                      error);
         SK_CHECK(base->device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&this->root)));
     }
+    // AddMesh() should be invoked before this if needed
     //"VSMain","PSMain","vs_5_1"
     void CreatePipeline(std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs, std::wstring Shader)
     {
@@ -141,15 +156,22 @@ public:
         psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
         auto rs = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
         // rs.FillMode=D3D12_FILL_MODE_WIREFRAME;
-        rs.CullMode = D3D12_CULL_MODE_NONE;
+        // rs.DepthClipEnable=true;
+        // rs.CullMode = D3D12_CULL_MODE_NONE;
         psoDesc.RasterizerState = rs;
         psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        psoDesc.DepthStencilState.DepthEnable = TRUE;
+        psoDesc.DepthStencilState.DepthEnable = FALSE;
         psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC::D3D12_COMPARISON_FUNC_LESS;
+        psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         psoDesc.DepthStencilState.StencilEnable = FALSE;
         psoDesc.SampleMask = UINT_MAX;
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psoDesc.NumRenderTargets = RT->Size();
+        if (meshes.size() > 0)
+        {
+            psoDesc.DepthStencilState.DepthEnable = TRUE;
+            psoDesc.DSVFormat = base->depthFormat;
+        }
         for (uint32_t i = 0; i < RT->Size(); i++)
         {
             psoDesc.RTVFormats[i] = RT->GetFormat(i);

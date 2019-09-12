@@ -11,7 +11,7 @@ private:
     {
         for (auto &&c : callbacks)
         {
-            c->WinProc(hWnd, uMsg,  wParam,  lParam);
+            c->WinProc(hWnd, uMsg, wParam, lParam);
         }
     }
 
@@ -50,7 +50,7 @@ public:
         base->hwnd = CreateWindow(
             windowClass.lpszClassName,
             base->name.c_str(),
-            WS_OVERLAPPEDWINDOW,
+            WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME,
             CW_USEDEFAULT,
             CW_USEDEFAULT,
             windowRect.right - windowRect.left,
@@ -76,6 +76,7 @@ public:
         switch (uMsg)
         {
         case WM_CLOSE:
+        case WM_QUIT:
             // prepared = false;
             DestroyWindow(hWnd);
             PostQuitMessage(0);
@@ -90,8 +91,7 @@ public:
         case WM_KEYDOWN:
             if (wParam == VK_ESCAPE)
             {
-                DestroyWindow(hWnd);
-                PostQuitMessage(0);
+                PostMessage(hWnd,WM_QUIT, 0, 0);
             }
             return 0;
         case WM_KEYUP:
@@ -99,7 +99,7 @@ public:
         case WM_PAINT:
             return 0;
         case WM_DESTROY:
-            PostQuitMessage(0);
+            PostMessage(hWnd,WM_QUIT, 0, 0);
             return 0;
         case WM_LBUTTONDOWN:
             return 0;

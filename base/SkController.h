@@ -19,6 +19,7 @@ public:
     } uniformBuffer;
     struct
     {
+        bool alt = false;
         bool left = false;
         bool mid = false;
         bool right = false;
@@ -33,13 +34,13 @@ public:
         agent = initAgent;
         base = agent->GetBase();
         cam = &base->cam;
-        Vector3 eyePos{0.0f, 3.0f, -10.0f};
+        Vector3 eyePos{0.0f, 3.0f, 10.0f};
         Vector3 focusPos{0.0f, 0.0f, 0.0f};
         Vector3 up{0.0f, 1.0f, 0.0f};
         // TODO:
         Vector3 right = DirectX::XMVector3Cross(eyePos - focusPos, up);
         up = DirectX::XMVector3Cross(right, eyePos - focusPos);
-        cam->SetLens(DirectX::XMConvertToRadians(60.0f), (float)base->width / base->height, 0.01f, 20.0f);
+        cam->SetLens(DirectX::XMConvertToRadians(60.0f), (float)base->width / base->height, 0.01f, 100.0f);
         cam->SetLookAt(eyePos, Vector3(0.0f), up);
         // uniformBuffer.projection = Matrix::CreatePerspectiveFieldOfView(DirectX::XMConvertToRadians(90.0f), (float)base->width / base->height, 0.01f, 20.0f);
         // uniformBuffer.view = Matrix::CreateLookAt(eyePos, Vector3(0.0f), up);
@@ -64,23 +65,33 @@ public:
     {
         cam->Walking(base->delta);
         MouseProc();
+        cam->UpdateView();
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
-        uniformBuffer.iTime=base->timer;
-        uniformBuffer.upTime=cam->upTime;
+        uniformBuffer.iTime = base->timer;
+        uniformBuffer.upTime = cam->upTime;
         SK_CHECK(uniBuf.Map());
         memcpy(uniBuf.data, &uniformBuffer, uniBuf.bufSize);
         uniBuf.Unmap();
     }
     void MouseProc()
     {
-        float x=(float)LOWORD(mouse.lParam)/base->width;
-        float y=(float)HIWORD(mouse.lParam)/base->height;
+        POINT point;
+        GetCursorPos(&point);
+        float x = (float)(point.x) / base->width;
+        float y = (float)(point.y) / base->height;
         float dx = mouse.pos.x - x;
         float dy = mouse.pos.y - y;
         if (mouse.left)
         {
-            cam->Turn(dx, dy);
+            if (mouse.alt)
+            {
+                cam->Turn(dx, dy);
+            }
+            else
+            {
+                cam->FocusOn(dx, dy);
+            }
         }
         mouse.pos.x = x;
         mouse.pos.y = y;
@@ -96,10 +107,10 @@ public:
             Event_Key(wParam, false);
             break;
         case WM_LBUTTONDOWN:
-            Event_LButton(wParam, true);
+            Event_LButton(wParam, lParam, true);
             break;
         case WM_LBUTTONUP:
-            Event_LButton(wParam, false);
+            Event_LButton(wParam, lParam, false);
             break;
         case WM_MOUSEMOVE:
             mouse.lParam = lParam;
@@ -130,11 +141,19 @@ public:
         case 'd':
             cam->keys.right = isDown;
             break;
+        case 'E':
+        case 'e':
+            cam->keys.up = isDown;
+            break;
+        case 'F':
+        case 'f':
+            cam->keys.down = isDown;
+            break;
         default:
             break;
         }
     }
-    void Event_LButton(WPARAM wParam, bool isDown)
+    void Event_LButton(WPARAM wParam, LPARAM lParam, bool isDown)
     {
         mouse.left = isDown;
     }

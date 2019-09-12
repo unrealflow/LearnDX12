@@ -36,9 +36,9 @@ public:
         SK_CHECK(base->device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&this->srvHeap)));
 
         D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
-        srvHeapDesc.NumDescriptors = 2;
-        srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-        srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+        dsvHeapDesc.NumDescriptors = 1;
+        dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+        dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
         SK_CHECK(base->device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&this->dsvHeap)));
 
         this->rtvDesSize = base->device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -63,6 +63,10 @@ public:
     ID3D12DescriptorHeap *GetHeapRTV()
     {
         return rtvHeap.Get();
+    }
+    ID3D12DescriptorHeap *GetHeapDSV()
+    {
+        return dsvHeap.Get();
     }
     CD3DX12_CPU_DESCRIPTOR_HANDLE GetRTV(int offset)
     {

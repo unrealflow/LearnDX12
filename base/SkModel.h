@@ -323,5 +323,7 @@ public:
                 }
             }
         }
+        fprintf(stderr,"Model Size\tV : %d\tI : %d...\n",mesh.vertexCount,mesh.indexCount);
+        
     }
 };

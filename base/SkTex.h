@@ -66,7 +66,7 @@ public:
         textureData.pData = data;
         textureData.RowPitch = this->width * TexturePixelSize;
         textureData.SlicePitch = textureData.RowPitch * this->height;
-        fprintf(stderr,"%d,%d...\n",this->width,this->height);
+        fprintf(stderr,"Texture Size : %d,%d...\n",this->width,this->height);
         
         // Describe and create a SRV for the texture.
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};

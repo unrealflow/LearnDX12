@@ -74,12 +74,13 @@ public:
         textureDesc.SampleDesc.Quality = 0;
         textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
+        CD3DX12_CLEAR_VALUE clearValue{this->format,base->clearColor};
         SK_CHECK(base->device->CreateCommittedResource(
             &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
             D3D12_HEAP_FLAG_NONE,
             &textureDesc,
             D3D12_RESOURCE_STATE_COMMON,
-            nullptr,
+            &clearValue,
             IID_PPV_ARGS(&texture)));
     }
     void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE srvHandle, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle)

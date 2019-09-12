@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "SkBase.h"
 #include "SkWin32.h"
-#include "SkPipeline.h"
+#include "SkDevice.h"
 #include "SkCmd.h"
 #include "SkMesh.h"
 #include "SkController.h"
@@ -10,7 +10,7 @@ class SkApp
 protected:
     SkBase *base = nullptr;
     SkWin32 win;
-    SkPipeline pipeline;
+    SkDevice device;
     SkCmd cmd;
     SkAgent agent;
     SkController con;
@@ -18,7 +18,7 @@ protected:
     {
         win.Init(base);
         win.InitWindow();
-        pipeline.Init(base);
+        device.Init(base);
         agent.Init(base);
         cmd.Init(base);
         con.Init(&agent);
@@ -30,12 +30,12 @@ protected:
     void Loop()
     {
         MSG msg = {};
-        float lastTime=GetMilliTime();
+        float lastTime = GetMilliTime();
         while (msg.message != WM_QUIT)
         {
-            base->timer=GetMilliTime();
-            base->delta=base->timer-lastTime;
-            lastTime=base->timer;
+            base->timer = GetMilliTime();
+            base->delta = base->timer - lastTime;
+            lastTime = base->timer;
             Draw();
             // Process any messages in the queue.
             if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))

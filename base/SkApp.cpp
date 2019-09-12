@@ -1,11 +1,11 @@
 ﻿#include "SkApp.h"
-#include "SkPipeline.h"
+#include "SkDevice.h"
 #include "SkCmd.h"
 #include "SkTex.h"
 #include "SkModel.h"
 #include "SkController.h"
 #include "SkAgent.h"
-SkMesh mesh;
+
 SkTex tex;
 SkModel model;
 SkPass pass0;
@@ -14,13 +14,11 @@ SkImageRT rt0;
 SkDefaultRT rt1;
 void SkApp::Setup()
 {
-    // mesh.Init(&agent);
-    // std::vector<D3D12_INPUT_ELEMENT_DESC> inputDescs;
-    // mesh.SetupTriangle(inputDescs);
-    // model.Init(&agent);
-    // model.ImportModel(GetAssetFullPath("model/vk.obj"));
 
-    // model.mesh.Setup();
+    model.Init(&agent);
+    model.ImportModel(GetAssetFullPath("model/vk.obj"));
+
+    model.mesh.Setup();
     // tex.InitCheckerboard();
     {
         tex.Init(&agent, GetAssetFullPath("texture/pic.jpg"));
@@ -43,9 +41,12 @@ void SkApp::Setup()
         rt0.CreateView(base->heap->GetSRV(1), base->heap->GetRTV(base->imageCount));
 
         pass0.CreateRoot(rootParameters, &rt0);
-        pass0.CreatePipeline(model.inputDescs, L"shader/pass0.hlsl");
+        pass0.AddMesh(&model.mesh);
+        // pass0.CreatePipeline(model.inputDescs, L"shader/pass0.hlsl");
+        pass0.CreatePipeline(model.inputDescs, L"shader/shader.hlsl");
         pass0.AddDesc(0, base->heap->GetHeapSRV());
         pass0.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+       
         cmd.AddPass(&pass0);
     }
 

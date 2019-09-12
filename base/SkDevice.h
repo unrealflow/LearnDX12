@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "SkBase.h"
 #include "SkHeap.h"
-class SkPipeline
+class SkDevice
 {
 private:
     SkBase *base;
@@ -46,6 +46,11 @@ private:
                 D3D_FEATURE_LEVEL_11_0,
                 IID_PPV_ARGS(&base->device)));
         }
+        {
+            D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
+            SK_CHECK(base->device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData,sizeof(featureSupportData)));
+            fprintf(stderr,"RaytracingSupport : %s...\n",featureSupportData.RaytracingTier?"True":"False");  
+        }
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -76,7 +81,7 @@ private:
         SK_CHECK(swapChain.As(&base->swapChain));
         base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
 
-        heap.Init(base,base->imageCount+5,5);
+        heap.Init(base, base->imageCount + 5, 5);
 
         // Create frame resources.
         {
@@ -92,7 +97,7 @@ private:
 
             D3D12_RESOURCE_DESC depthDes = {};
             depthDes.MipLevels = 1;
-            depthDes.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+            depthDes.Format = base->depthFormat;
             depthDes.Width = base->width;
             depthDes.Height = base->height;
             depthDes.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -102,19 +107,21 @@ private:
             depthDes.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
             D3D12_CLEAR_VALUE clearValue = {};
-            clearValue.Format = depthDes.Format;
+            clearValue.Format = base->depthFormat;
             clearValue.DepthStencil = {1.0f, 0};
             SK_CHECK(base->device->CreateCommittedResource(
                 &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-                D3D12_HEAP_FLAG_NONE, &depthDes,
-                D3D12_RESOURCE_STATE_COMMON, &clearValue, IID_PPV_ARGS(&base->depthTarget)));
+                D3D12_HEAP_FLAG_NONE, // &depthDes,
+                &CD3DX12_RESOURCE_DESC::Tex2D(base->depthFormat, base->width, base->height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+                D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue, IID_PPV_ARGS(&base->depthTarget)));
 
             D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-            dsvDesc.Format = depthDes.Format;
+            dsvDesc.Format = base->depthFormat;
             dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
             dsvDesc.Texture2D = {0};
             // TODO :
-            // base->device->CreateDepthStencilView(base->depthTarget.Get(), &dsvDesc, base->dsvHeap->GetCPUDescriptorHandleForHeapStart());
+            CD3DX12_CPU_DESCRIPTOR_HANDLE handle{heap.GetHeapDSV()->GetCPUDescriptorHandleForHeapStart()};
+            base->device->CreateDepthStencilView(base->depthTarget.Get(), nullptr, handle);
         }
 
         SK_CHECK(base->device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&base->cmdPool)));

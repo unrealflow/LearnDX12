@@ -14,17 +14,23 @@ private:
         this->right = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(this->front, this->up));
         this->up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(this->right, this->front));
     }
-    void UpdateViewMatrix()
-    {
-        view = Matrix::CreateLookAt(this->pos, this->pos + this->front, this->up);
-    }
 
 public:
+    void UpdateView()
+    {
+        if (true == needUpdate)
+        {
+            view = Matrix::CreateLookAt(this->pos, this->pos + this->front, this->up);
+            upTime=GetMilliTime();
+            needUpdate = false;
+        }
+    }
     Vector3 pos = {0.0f, 0.0f, 0.0f};
     Vector3 right = {1.0f, 0.0f, 0.0f};
     Vector3 up = {0.0f, 1.0f, 0.0f};
     Vector3 front = {0.0f, 0.0f, 1.0f};
     float upTime = 0.0f;
+    bool needUpdate = false;
     Matrix proj;
     Matrix view;
     struct
@@ -33,6 +39,8 @@ public:
         bool right = false;
         bool front = false;
         bool back = false;
+        bool up = false;
+        bool down = false;
     } keys;
 
     Vector3 GetPosition() const { return pos; }
@@ -41,12 +49,12 @@ public:
         pos.x = x;
         pos.y = y;
         pos.z = z;
-        UpdateViewMatrix();
+        needUpdate = true;
     }
     void SetPostion(const Vector3 &v)
     {
         pos = v;
-        UpdateViewMatrix();
+        needUpdate = true;
     }
     void SetLens(float fov, float aspect, float zn, float zf)
     {
@@ -67,53 +75,60 @@ public:
     void Strafe(float d)
     {
         this->pos += d * this->right;
-        this->UpdateViewMatrix();
+        this->needUpdate = true;
     }
     void Walk(float d)
     {
         this->pos += d * this->front;
-        this->UpdateViewMatrix();
+        this->needUpdate = true;
     }
     void Walking(float delta)
     {
-        if (keys.front | keys.back | keys.left | keys.right)
+        if (keys.front | keys.back | keys.left | keys.right | keys.up | keys.down)
         {
-            upTime = GetMilliTime();
-            Vector3 dir = (float)(keys.front - keys.back) * front + (float)(keys.right - keys.left) * right;
+            Vector3 dir = (float)(keys.front - keys.back) * front + (float)(keys.right - keys.left) * right + (float)(keys.up - keys.down) * up;
             dir.Normalize();
             this->pos += delta * walkSpeed * dir;
-            this->UpdateViewMatrix();
+            this->needUpdate = true;
         }
     }
     void Turn(float angleY, float angleX)
     {
-        upTime = GetMilliTime();
         Matrix R = Matrix::CreateRotationY(turnSpeed * angleY);
         R = R * DirectX::XMMatrixRotationAxis(this->right, turnSpeed * angleX);
         this->right = DirectX::XMVector3TransformNormal(this->right, R);
         this->up = DirectX::XMVector3TransformNormal(this->up, R);
         this->front = DirectX::XMVector3TransformNormal(this->front, R);
         this->Reortho();
-        this->UpdateViewMatrix();
+        this->needUpdate = true;
     }
     void Pitch(float angle)
     {
-        upTime = GetMilliTime();
         Matrix R = DirectX::XMMatrixRotationAxis(this->right, turnSpeed * angle);
         this->up = DirectX::XMVector3TransformNormal(this->up, R);
         this->front = DirectX::XMVector3TransformNormal(this->front, R);
         this->Reortho();
-        this->UpdateViewMatrix();
+        this->needUpdate = true;
     }
     void Turn(float angle)
     {
-        upTime = GetMilliTime();
         Matrix R = Matrix::CreateRotationY(turnSpeed * angle);
         this->right = DirectX::XMVector3TransformNormal(this->right, R);
         this->up = DirectX::XMVector3TransformNormal(this->up, R);
         this->front = DirectX::XMVector3TransformNormal(this->front, R);
         this->Reortho();
-        this->UpdateViewMatrix();
+        this->needUpdate = true;
+    }
+    void FocusOn(float angleY, float angleX)
+    {
+        Matrix R = Matrix::CreateRotationY(turnSpeed * angleY);
+        R = R * DirectX::XMMatrixRotationAxis(this->right, turnSpeed * angleX);
+        this->pos = DirectX::XMVector3TransformCoord(this->pos, R);
+        this->right = DirectX::XMVector3TransformNormal(this->right, R);
+        this->up = DirectX::XMVector3TransformNormal(this->up, R);
+        this->front = DirectX::XMVector3TransformNormal(this->front, R);
+        this->Reortho();
+        this->needUpdate = true;
     }
     SkCamera(/* args */) {}
     ~SkCamera() {}

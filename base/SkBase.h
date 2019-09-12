@@ -14,6 +14,8 @@ public:
     int iCmdShow;
     const uint32_t imageCount = 2;
     const DXGI_FORMAT format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    const DXGI_FORMAT depthFormat = DXGI_FORMAT_D32_FLOAT;
+    const float clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     uint32_t imageIndex;
     ComPtr<IDXGISwapChain3> swapChain;
     ComPtr<ID3D12Device> device;
