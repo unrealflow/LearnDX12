@@ -24,7 +24,6 @@ public:
         bool mid = false;
         bool right = false;
         Vector2 pos;
-        LPARAM lParam;
     } mouse;
 
     D3D12_CONSTANT_BUFFER_VIEW_DESC bufDes;
@@ -113,9 +112,11 @@ public:
             Event_LButton(wParam, lParam, false);
             break;
         case WM_MOUSEMOVE:
-            mouse.lParam = lParam;
             break;
         case WM_MOUSELEAVE:
+            break;
+        case WM_MOUSEWHEEL:
+            Event_Wheel(wParam);
             break;
         default:
             break;
@@ -156,5 +157,10 @@ public:
     void Event_LButton(WPARAM wParam, LPARAM lParam, bool isDown)
     {
         mouse.left = isDown;
+    }
+    void Event_Wheel(LPARAM wParam)
+    {
+        int pos = (int)(short)HIWORD(wParam)/120;
+        cam->Walk((float)(pos));
     }
 };

@@ -2,6 +2,7 @@
 #include "SkDevice.h"
 #include "SkCmd.h"
 #include "SkTex.h"
+#include "SkPass.h"
 #include "SkModel.h"
 #include "SkController.h"
 #include "SkAgent.h"
@@ -10,7 +11,7 @@ SkTex tex;
 SkModel model;
 SkPass pass0;
 SkPass pass1;
-SkImageRT rt0;
+SkGBufferRT rt0;
 SkDefaultRT rt1;
 void SkApp::Setup()
 {
@@ -37,9 +38,7 @@ void SkApp::Setup()
         rootParameters[1].InitAsConstantBufferView(0);
 
         rt0.Init(base);
-        rt0.CreateResource();
-        rt0.CreateView(base->heap->GetSRV(1), base->heap->GetRTV(base->imageCount));
-
+        rt0.Setup(base->heap,3,1);
         pass0.CreateRoot(rootParameters, &rt0);
         pass0.AddMesh(&model.mesh);
         // pass0.CreatePipeline(model.inputDescs, L"shader/pass0.hlsl");
@@ -54,11 +53,12 @@ void SkApp::Setup()
         pass1.Init(base);
 
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
 
         std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{2};
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
+
 
         rt1.Init(base);
 

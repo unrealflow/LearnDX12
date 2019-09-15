@@ -16,7 +16,9 @@ struct UniformBuffer
     float upTime;
 };
 Texture2D g_texture : register(t0);
-Texture2D g_texture1 : register(t1);
+Texture2D position : register(t1);
+Texture2D normal : register(t2);
+Texture2D albedo : register(t3);
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer> buf : register(b0);
 PSInput VSMain(
@@ -33,6 +35,6 @@ PSInput VSMain(
 PSOutput PSMain(PSInput input)
 {
     PSOutput p;
-    p.rt0 = g_texture1.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    p.rt0 = albedo.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
     return p;
 }

@@ -48,8 +48,8 @@ private:
         }
         {
             D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
-            SK_CHECK(base->device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData,sizeof(featureSupportData)));
-            fprintf(stderr,"RaytracingSupport : %s...\n",featureSupportData.RaytracingTier?"True":"False");  
+            SK_CHECK(base->device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData)));
+            fprintf(stderr, "RaytracingSupport : %s...\n", featureSupportData.RaytracingTier ? "True" : "False");
         }
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -80,8 +80,8 @@ private:
 
         SK_CHECK(swapChain.As(&base->swapChain));
         base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
-
-        heap.Init(base, base->imageCount + 5, 5);
+        base->heap = &heap;
+        heap.Init(base, base->imageCount + 5, 5, 1);
 
         // Create frame resources.
         {

@@ -76,7 +76,10 @@ public:
         if (0 == meshes.size())
         {
             cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, nullptr);
-            cmd->ClearRenderTargetView(handles[0], base->clearColor, 0, nullptr);
+            for (uint32_t t = 0; t < RT->Size(); t++)
+            {
+                cmd->ClearRenderTargetView(handles[t], base->clearColor, 0, nullptr);
+            }
             // Record commands.
             cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
             cmd->DrawInstanced(3, 1, 0, 0);
@@ -84,7 +87,10 @@ public:
         else
         {
             cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, &base->heap->GetHeapDSV()->GetCPUDescriptorHandleForHeapStart());
-            cmd->ClearRenderTargetView(handles[0], base->clearColor, 0, nullptr);
+            for (uint32_t t = 0; t < RT->Size(); t++)
+            {
+                cmd->ClearRenderTargetView(handles[t], base->clearColor, 0, nullptr);
+            }
             // Record commands.
             cmd->ClearDepthStencilView(base->heap->GetHeapDSV()->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
             for (uint32_t mc = 0; mc < meshes.size(); mc++)

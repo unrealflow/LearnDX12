@@ -3,11 +3,13 @@ struct PSInput
     float4 position : SV_POSITION;
     float4 normal : NORMAL;
     float2 uv: TEXCOORD;
-    float3 color : COLOR;
+    float4 w_pos : COLOR;
 };
 struct PSOutput
 {
-    float4 rt0 : SV_TARGET0;
+    float4 position : SV_TARGET0;
+    float4 normal : SV_TARGET1;
+    float4 albedo : SV_TARGET2;
 };
 struct UniformBuffer
 {
@@ -26,18 +28,20 @@ PSInput VSMain(
     
     // position.y+=pow((1.0-cos(position.x+0.001*buf.iTime))/2.0,3);
     PSInput result;
+    result.w_pos=position;
     result.position=float4(position.xyz,1.0);
     result.position=mul(result.position,buf.view);
     result.position=mul(result.position,buf.projection);
     result.normal=normal;
     result.uv=uv;
-    result.color=position.xyz;
     return result;
 }
 
 PSOutput PSMain(PSInput input)
 {
     PSOutput p;
-    p.rt0 = g_texture.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    p.position=input.w_pos;
+    p.normal=input.normal;
+    p.albedo = g_texture.Sample(g_sampler, float2(input.uv.x,input.uv.y));
     return p;
 }
