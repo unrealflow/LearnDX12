@@ -141,16 +141,16 @@ public:
         // #else
         // UINT compileFlags = 0;
         // #endif
-
+        SkInclude includes;
         SK_CHECK_MSG(D3DCompileFromFile(
                          GetAssetFullPath(Shader).c_str(),
-                         nullptr, nullptr, "VSMain", "vs_5_1",
+                         nullptr, &includes, "VSMain", "vs_5_1",
                          compileFlags, 0, &vertexShader, &errorMessage),
                      errorMessage);
 
         SK_CHECK_MSG(D3DCompileFromFile(
                          GetAssetFullPath(Shader).c_str(),
-                         nullptr, nullptr, "PSMain", "ps_5_1",
+                         nullptr, &includes, "PSMain", "ps_5_1",
                          compileFlags, 0, &pixelShader, &errorMessage),
                      errorMessage);
 

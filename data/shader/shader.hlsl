@@ -15,6 +15,7 @@ struct UniformBuffer
 {
     float4x4 projection;
     float4x4 view;
+    float3 camPos;
     float iTime;
     float upTime;
 };

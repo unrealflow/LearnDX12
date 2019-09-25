@@ -14,6 +14,7 @@ public:
     {
         Matrix projection;
         Matrix view;
+        Vector3 camPos;
         float iTime;
         float upTime;
     } uniformBuffer;
@@ -41,10 +42,12 @@ public:
         up = DirectX::XMVector3Cross(right, eyePos - focusPos);
         cam->SetLens(DirectX::XMConvertToRadians(60.0f), (float)base->width / base->height, 0.01f, 100.0f);
         cam->SetLookAt(eyePos, Vector3(0.0f), up);
+        cam->UpdateView();
         // uniformBuffer.projection = Matrix::CreatePerspectiveFieldOfView(DirectX::XMConvertToRadians(90.0f), (float)base->width / base->height, 0.01f, 20.0f);
         // uniformBuffer.view = Matrix::CreateLookAt(eyePos, Vector3(0.0f), up);
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
+        uniformBuffer.camPos = cam->pos;
     }
     void Setup()
     {
@@ -67,6 +70,7 @@ public:
         cam->UpdateView();
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
+        uniformBuffer.camPos = cam->pos;
         uniformBuffer.iTime = base->timer;
         uniformBuffer.upTime = cam->upTime;
         SK_CHECK(uniBuf.Map());
@@ -160,7 +164,7 @@ public:
     }
     void Event_Wheel(LPARAM wParam)
     {
-        int pos = (int)(short)HIWORD(wParam)/120;
+        int pos = (int)(short)HIWORD(wParam) / 120;
         cam->Walk((float)(pos));
     }
 };

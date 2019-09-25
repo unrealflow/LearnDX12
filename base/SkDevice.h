@@ -81,7 +81,7 @@ private:
         SK_CHECK(swapChain.As(&base->swapChain));
         base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
         base->heap = &heap;
-        heap.Init(base, base->imageCount + 5, 5, 1);
+        heap.Init(base, base->imageCount + 10, 10, 1);
 
         // Create frame resources.
         {

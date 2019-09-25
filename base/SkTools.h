@@ -134,3 +134,51 @@ inline D3D12_STATIC_SAMPLER_DESC InitSampler()
     sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
     return sampler;
 }
+class SkInclude : public ID3DInclude
+{
+private:
+    std::string shader_dir = "shader/";
+
+public:
+    SkInclude()
+    {
+    }
+    SkInclude(std::string dir)
+    {
+        shader_dir = dir;
+    }
+    HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+    {
+
+        std::string code = "";
+        std::ifstream file;
+        // ensure ifstream objects can throw exceptions:
+        file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        try
+        {
+            // open files
+            file.open(GetAssetFullPath(shader_dir + pFileName));
+            std::stringstream vShaderStream;
+            vShaderStream << file.rdbuf();
+            file.close();
+            code = vShaderStream.str();
+        }
+        catch (std::ifstream::failure e)
+        {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+        }
+        if (code.length() > 0)
+        {
+            char *pData = new char[code.length() + 10];
+            strcpy_s(pData, code.length()+1, code.c_str());
+            *ppData = pData;
+            *pBytes = static_cast<UINT>(code.length());
+        }
+        return S_OK;
+    }
+    HRESULT __stdcall Close(LPCVOID pData)
+    {
+        delete[] pData;
+        return S_OK;
+    }
+};

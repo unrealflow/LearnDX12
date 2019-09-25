@@ -53,14 +53,6 @@ private:
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
 
-public:
-    ComPtr<ID3D12Resource> texture;
-    DXGI_FORMAT format;
-    void Init(SkBase *initBase, DXGI_FORMAT format = DXGI_FORMAT_R32G32B32A32_FLOAT)
-    {
-        base = initBase;
-        this->format = format;
-    }
     void CreateResource()
     {
         D3D12_RESOURCE_DESC textureDesc = {};
@@ -83,7 +75,7 @@ public:
             &clearValue,
             IID_PPV_ARGS(&texture)));
     }
-    void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE srvHandle, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle)
+    void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,D3D12_CPU_DESCRIPTOR_HANDLE srvHandle)
     {
         this->srvHandle = srvHandle;
         this->rtvHandle = rtvHandle;
@@ -99,6 +91,20 @@ public:
         rtvDesc.Format = this->format;
         rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
         base->device->CreateRenderTargetView(texture.Get(), &rtvDesc, rtvHandle);
+    }
+
+public:
+    ComPtr<ID3D12Resource> texture;
+    DXGI_FORMAT format;
+    void Init(SkBase *initBase, DXGI_FORMAT format = DXGI_FORMAT_R32G32B32A32_FLOAT)
+    {
+        base = initBase;
+        this->format = format;
+    }
+    void Setup(SkHeap* heap, int rtvBegin, int srvBegin)
+    {
+        CreateResource();
+        CreateView(heap->GetRTV(rtvBegin),heap->GetSRV(srvBegin));
     }
     virtual uint32_t Size() override
     {
@@ -183,6 +189,7 @@ public:
         base = initBase;
         this->format = format;
     }
+    //Needs 3 handles
     void Setup(SkHeap *heap, int rtvBegin, int srvBegin)
     {
         this->heap = heap;

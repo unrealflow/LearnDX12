@@ -19,6 +19,8 @@
 #include <wrl.h>
 #include <shellapi.h>
 #include <SimpleMath.h>
+#include <fstream>
+#include <sstream>
 // using namespace DirectX;
 using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
@@ -30,12 +32,12 @@ struct SkBuffer
     void *data;
     HRESULT Map()
     {
-        CD3DX12_RANGE range(0,bufSize);
-        return buf->Map(0,&range,&data);
+        CD3DX12_RANGE range(0, bufSize);
+        return buf->Map(0, &range, &data);
     }
     void Unmap()
     {
-        buf->Unmap(0,nullptr);
+        buf->Unmap(0, nullptr);
     }
 };
 class SkHeap;
