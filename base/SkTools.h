@@ -138,18 +138,27 @@ class SkInclude : public ID3DInclude
 {
 private:
     std::string shader_dir = "shader/";
+    std::unordered_map<std::string, std::pair<char *, uint32_t>> name_to_data;
 
 public:
     SkInclude()
     {
+        name_to_data.clear();
     }
     SkInclude(std::string dir)
     {
         shader_dir = dir;
+        name_to_data.clear();
     }
     HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
     {
-
+        if (name_to_data.find(pFileName) != name_to_data.end())
+        { 
+            auto p = name_to_data[pFileName];
+            *ppData = p.first;
+            *pBytes = p.second;
+            return S_OK;
+        }
         std::string code = "";
         std::ifstream file;
         // ensure ifstream objects can throw exceptions:
@@ -170,15 +179,24 @@ public:
         if (code.length() > 0)
         {
             char *pData = new char[code.length() + 10];
-            strcpy_s(pData, code.length()+1, code.c_str());
+            strcpy_s(pData, code.length() + 1, code.c_str());
+            uint32_t len = static_cast<UINT>(code.length());
+            name_to_data[pFileName] = std::pair(pData, len);
             *ppData = pData;
-            *pBytes = static_cast<UINT>(code.length());
+            *pBytes = len;
         }
         return S_OK;
     }
     HRESULT __stdcall Close(LPCVOID pData)
     {
-        delete[] pData;
         return S_OK;
+    }
+    ~SkInclude()
+    {
+        for (auto &&p : name_to_data)
+        {           
+            delete [] p.second.first;
+            p.second.first=nullptr;
+        }
     }
 };

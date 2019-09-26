@@ -30,6 +30,7 @@ public:
     // bool useWarpDevice = false;
 
     ComPtr<ID3D12RootSignature> rootSignature;
+    SkInclude include;
 
     HWND GetHwnd()
     {

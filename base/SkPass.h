@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "SkBase.h"
 #include "SkTarget.h"
+#include "SkMesh.h"
 
 class SkPass
 {
@@ -11,7 +12,6 @@ private:
     std::unordered_map<uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE> tableDescs;
     std::unordered_map<uint32_t, D3D12_GPU_VIRTUAL_ADDRESS> constDescs;
     SkTarget *RT;
-
 public:
     SkPass() {}
     ~SkPass() {}
@@ -141,16 +141,15 @@ public:
         // #else
         // UINT compileFlags = 0;
         // #endif
-        SkInclude includes;
         SK_CHECK_MSG(D3DCompileFromFile(
                          GetAssetFullPath(Shader).c_str(),
-                         nullptr, &includes, "VSMain", "vs_5_1",
+                         nullptr, &base->include, "VSMain", "vs_5_1",
                          compileFlags, 0, &vertexShader, &errorMessage),
                      errorMessage);
 
         SK_CHECK_MSG(D3DCompileFromFile(
                          GetAssetFullPath(Shader).c_str(),
-                         nullptr, &includes, "PSMain", "ps_5_1",
+                         nullptr, &base->include, "PSMain", "ps_5_1",
                          compileFlags, 0, &pixelShader, &errorMessage),
                      errorMessage);
 

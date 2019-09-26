@@ -1,3 +1,4 @@
+#include "common.hlsl"
 struct PSInput
 {
     float4 position : SV_POSITION;
@@ -11,14 +12,7 @@ struct PSOutput
     float4 normal : SV_TARGET1;
     float4 albedo : SV_TARGET2;
 };
-struct UniformBuffer
-{
-    float4x4 projection;
-    float4x4 view;
-    float3 camPos;
-    float iTime;
-    float upTime;
-};
+
 Texture2D g_texture : register(t0);
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer> buf:register(b0);
