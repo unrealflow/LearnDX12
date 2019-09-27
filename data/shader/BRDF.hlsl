@@ -35,6 +35,9 @@ float3 BRDF(SkMat mat, float3 color, float3 L, float3 V, float3 N, out float3 kS
 {
     float NoL = dot(N, L);
     float NoV = dot(N, V);
+    float3 F0 =0.04;
+    F0 = lerp(F0, color, mat.metallic);
+    kS=F0;
     if (NoL < 0 || NoV < 0)
         return float3(0.0, 0.0, 0.0);
 
@@ -42,15 +45,14 @@ float3 BRDF(SkMat mat, float3 color, float3 L, float3 V, float3 N, out float3 kS
     float NoH = dot(N, H);
     float HoV = dot(H, V);
 
-    float3 F0 =0.04;
-    F0 = lerp(F0, color, mat.metallic);
+    
 
     float D = D_GGX(NoH, mat.roughness);
     float G = G_Smith(NoV, NoL, mat.roughness);
     float3 F = F_Schlick(HoV, F0);
 
-    kS = F;
-    float3 kD = 1.0 - kS;
+    // kS = F;
+    float3 kD = 1.0 - F;
     kD *= 1.0 - mat.metallic;
 
     float3 numerator = D * G * F;

@@ -6,6 +6,7 @@ struct UniformBuffer
     float4x4 view;
     float3 camPos;
     float iTime;
+    float3 camFront;
     float upTime;
 };
 struct SkMat

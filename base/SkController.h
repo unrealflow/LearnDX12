@@ -16,6 +16,7 @@ public:
         Matrix view;
         Vector3 camPos;
         float iTime;
+        Vector3 camFront;
         float upTime;
     } uniformBuffer;
     struct
@@ -40,14 +41,16 @@ public:
         // TODO:
         Vector3 right = DirectX::XMVector3Cross(eyePos - focusPos, up);
         up = DirectX::XMVector3Cross(right, eyePos - focusPos);
-        cam->SetLens(DirectX::XMConvertToRadians(60.0f), (float)base->width / base->height, 0.01f, 100.0f);
+        cam->SetLens(DirectX::XMConvertToRadians(90.0f), (float)base->width / base->height, 0.01f, 100.0f);
         cam->SetLookAt(eyePos, Vector3(0.0f), up);
         cam->UpdateView();
+        // Show(cam->proj);
         // uniformBuffer.projection = Matrix::CreatePerspectiveFieldOfView(DirectX::XMConvertToRadians(90.0f), (float)base->width / base->height, 0.01f, 20.0f);
         // uniformBuffer.view = Matrix::CreateLookAt(eyePos, Vector3(0.0f), up);
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
         uniformBuffer.camPos = cam->pos;
+        uniformBuffer.camFront = cam->front;
     }
     void Setup()
     {
@@ -71,6 +74,7 @@ public:
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
         uniformBuffer.camPos = cam->pos;
+        uniformBuffer.camFront = cam->front;
         uniformBuffer.iTime = base->timer;
         uniformBuffer.upTime = cam->upTime;
         SK_CHECK(uniBuf.Map());
@@ -103,6 +107,12 @@ public:
     {
         switch (uMsg)
         {
+        case WM_SYSKEYDOWN:
+            mouse.left = true;
+            break;
+        case WM_SYSKEYUP:
+            mouse.left = false;
+            break;
         case WM_KEYDOWN:
             Event_Key(wParam, true);
             break;
