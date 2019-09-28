@@ -72,7 +72,6 @@ public:
         // Indicate that the back buffer will be used as a render target.
         RT->PreBarrier(cmd, index);
         auto handles = RT->Get(index);
-
         if (0 == meshes.size())
         {
             cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, nullptr);

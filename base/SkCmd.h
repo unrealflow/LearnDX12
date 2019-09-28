@@ -66,6 +66,8 @@ public:
             this->cmdLists[i]->Reset(base->cmdPool.Get(), nullptr);
             for (uint32_t p = 0; p < passes.size(); p++)
             {
+                fprintf(stderr,"passes[%d]:...\n",p);
+                
                 passes[p]->CmdSet(this->cmdLists[i], i);
             }
 

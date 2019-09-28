@@ -64,8 +64,8 @@ PSOutput PSMain(PSInput input)
     if(length(_pos)<0.01)
     {
         float3 dir=UVToDir(buf.camFront,uv);
-        p.rt0=bk_texture.Sample(g_sampler,DirToUV(dir));
-        // p.rt0=float4(right,1.0);
+        p.rt0=bk_texture.SampleLevel(g_sampler,DirToUV(dir),0.0);
+        // p.rt0=bk_texture.Sample(g_sampler,DirToUV(dir));
         return p;
     }
     float3 _nor = normal.Sample(g_sampler, uv).xyz;
@@ -96,7 +96,9 @@ PSOutput PSMain(PSInput input)
             {
                 float2 bias=float2(i*stride,j*stride);
                 float weight=(_size-length(bias))/_size;
-                ref_color+=weight*bk_texture.Sample(g_sampler,ref_uv+bias);
+                // ref_color+=weight*bk_texture.Sample(g_sampler,ref_uv+bias);
+                ref_color+=weight*bk_texture.SampleLevel(g_sampler,ref_uv+bias,0.0);
+                
                 total_weight+=weight;
             }
         }

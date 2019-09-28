@@ -36,11 +36,12 @@ void SkApp::Setup()
     }
     {
         //srv [1]
-        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"));
+        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"),3);
         bk.Setup(1);
     }
     {
-
+        //Input : tex
+        //Output : GBufferRT
         pass0.Init(base);
 
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
@@ -62,7 +63,8 @@ void SkApp::Setup()
         cmd.AddPass(&pass0);
     }
     {
-
+        //input : tex,bk ,GBuffer
+        //output: imageRT
         pass1.Init(base);
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
@@ -81,6 +83,8 @@ void SkApp::Setup()
         cmd.AddPass(&pass1);
     }
     {
+        //input :GBufferRT,ImageRT
+        //output :SwapChianImage
         pass2.Init(base);
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
