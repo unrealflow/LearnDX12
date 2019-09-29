@@ -61,6 +61,7 @@ public:
         this->height = static_cast<uint32_t>(_height);
         this->format = DXGI_FORMAT_R8G8B8A8_UNORM;
         this->mipLevels = mipLevels;
+        packedMipInfo.NumStandardMips = mipLevels;
         if (!data)
         {
             throw std::runtime_error("Failed to load texture in " + path);
@@ -105,7 +106,7 @@ public:
             }
 
             const UINT64 uploadBufferSize = GetRequiredIntermediateSize(texture.Get(), 0, 1);
-            
+
             SK_CHECK(base->device->CreateCommittedResource(
                 &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
                 D3D12_HEAP_FLAG_NONE,
@@ -174,36 +175,43 @@ public:
             this->Filter(pixelData, mip[0], _width, _height);
             for (size_t m = 1; m < mip.size(); m++)
             {
-                this->Filter(mip[m-1], mip[m], _width, _height);
+                this->Filter(mip[m - 1], mip[m], _width, _height);
             }
         }
 
         {
 
-            std::vector<D3D12_SUBRESOURCE_DATA> textureData{1};
-            textureData[0].pData = pixelData.data();
-            // textureData.pData = data;
-            textureData[0].RowPitch = this->width * Channels;
-            textureData[0].SlicePitch = textureData[0].RowPitch * this->height;
-            fprintf(stderr, "Texture Size : %d,%d...\n", this->width, this->height);
-            if(this->mipLevels>1)
+            auto cmd = agent->BeginCmd();
+            uint32_t n = 0;
+            for (; n < packedMipInfo.NumStandardMips; n++)
             {
-                textureData.resize(this->mipLevels);
-                for (size_t n = 1; n < this->mipLevels; n++)
+                D3D12_SUBRESOURCE_DATA textureData = {};
+                if (n == 0)
                 {
-                    textureData[n].pData=mip[n-1].data();
-                    textureData[n].RowPitch=(this->width>>n) * Channels;
-                    textureData[n].SlicePitch = textureData[n].RowPitch * (this->height>>n);
+                    textureData.pData = pixelData.data();
                 }
+                else
+                {
+                    textureData.pData = mip[n - 1].data();
+                }
+                textureData.RowPitch = (this->width >> n) * Channels;
+                textureData.SlicePitch = textureData.RowPitch * (this->height >> n);
+                UpdateSubresources(cmd.Get(), texture.Get(), textureUploadHeap.Get(), 0, n, 1, &textureData);
             }
+            if (packedMipInfo.NumPackedMips > 0)
             {
-                auto cmd = agent->BeginCmd();
-                UpdateSubresources(cmd.Get(), texture.Get(), textureUploadHeap.Get(), 0, 0, static_cast<UINT>(textureData.size()), textureData.data());
-
-                cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
-                agent->FlushCmd(cmd);
+                std::vector<D3D12_SUBRESOURCE_DATA> textureData{packedMipInfo.NumPackedMips};
+                for (uint32_t t = 0; t < packedMipInfo.NumPackedMips; t++)
+                {
+                    uint32_t level = t + n;
+                    textureData[t].pData = mip[level - 1].data();
+                    textureData[t].RowPitch = (this->width >> level) * Channels;
+                    textureData[t].SlicePitch = textureData[t].RowPitch * (this->height >> level);
+                }
+                UpdateSubresources(cmd.Get(), texture.Get(), textureUploadHeap.Get(), 0, n, static_cast<UINT>(textureData.size()), textureData.data());
             }
+            cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+            agent->FlushCmd(cmd);
         }
     }
     void InitCheckerboard()

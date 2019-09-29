@@ -20,6 +20,7 @@ Texture2D bk_texture : register(t1);
 Texture2D position : register(t2);
 Texture2D normal : register(t3);
 Texture2D albedo : register(t4);
+Texture2D AO : register(t5);
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer> buf : register(b0);
 PSInput VSMain(
@@ -54,12 +55,34 @@ float3 UVToDir(float3 _front,float2 uv)
     float3 dir=normalize(_front+coord.x*right+coord.y*up);
     return dir;
 }
+float GetAO(float2 uv)
+{
+    int size=4;
 
+    float ao=0.0;
+    float stride=0.001;
+    float totalWeight=0.0;
+    for(int i=-size;i<=size;i++)
+    {
+        for(int j=-size;j<size;j++)
+        {
+
+            float weight=size- sqrt(float(i*i+j*j));
+            if(weight<=0)
+            {
+                continue;
+            }
+            totalWeight+=weight;
+            ao+=AO.Sample(g_sampler,uv+float2(i,j)*stride).x;
+        }
+    }
+
+    return ao/totalWeight;
+}
 PSOutput PSMain(PSInput input)
 {
     float2 uv=float2(input.uv.x,1.0-input.uv.y);
     PSOutput p;
-    float3 _color = albedo.Sample(g_sampler, uv).xyz;
     float3 _pos = position.Sample(g_sampler, uv).xyz;
     if(length(_pos)<0.01)
     {
@@ -69,13 +92,16 @@ PSOutput PSMain(PSInput input)
         return p;
     }
     float3 _nor = normal.Sample(g_sampler, uv).xyz;
+    float3 _albedo = albedo.Sample(g_sampler, uv).xyz;
     float3 viewDir=normalize(buf.camPos-_pos);
     float3 lightDir=lightPos-_pos;
     float lightDis=length(lightDir);
+    float ao=GetAO(uv);
+    _albedo*=ao;
     lightDir=lightDir/lightDis;
 
     float f=lightPower/(lightDis*lightDis);
-    _color=f*_color;
+    float3 _color=f*_albedo;
     float3 kS;
     SkMat mat;
     mat.roughness=0.3;
@@ -83,31 +109,12 @@ PSOutput PSMain(PSInput input)
     _color= BRDF(mat,_color,lightDir,viewDir,_nor,kS);
     float3 ref_dir=reflect(-viewDir,_nor);
     float2 ref_uv=DirToUV(ref_dir);
-
-    float stride=mat.roughness*0.001;
-    int size=3;
-    float _size=float(size);
-    float3 ref_color=0.0;
-    {
-        float total_weight=0.0;
-        for(int i=-size;i<=size;i++)
-        {
-            for(int j=-size;j<=size;j++)
-            {
-                float2 bias=float2(i*stride,j*stride);
-                float weight=(_size-length(bias))/_size;
-                // ref_color+=weight*bk_texture.Sample(g_sampler,ref_uv+bias);
-                ref_color+=weight*bk_texture.SampleLevel(g_sampler,ref_uv+bias,0.0);
-                
-                total_weight+=weight;
-            }
-        }
-        ref_color/=total_weight;
-    }
-    float3 dif_color=0.0;
-
-    _color+=ref_color*(1.0-mat.roughness)*F_Schlick(dot(_nor,viewDir) ,kS);
+    float3 ref_color=bk_texture.SampleLevel(g_sampler,ref_uv,mat.roughness*10.0);
+    float3 dif_color=_albedo*0.3;
+    float ref_factor=(1.0-mat.roughness)*F_Schlick(dot(_nor,viewDir) ,kS);
+    _color+=lerp(ref_color*ref_factor,dif_color,mat.roughness);
     _color=pow(_color,float3(0.45,0.45,0.45));
     p.rt0=float4(_color,1.0);
+    // p.rt0=ao;
     return p;
 }

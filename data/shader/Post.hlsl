@@ -13,7 +13,8 @@ struct PSOutput
 Texture2D position : register(t0);
 Texture2D normal : register(t1);
 Texture2D albedo : register(t2);
-Texture2D g_texture : register(t3);
+Texture2D rt_AO : register(t3);
+Texture2D rt_deferred : register(t4);
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer> buf : register(b0);
 PSInput VSMain(
@@ -29,7 +30,8 @@ PSInput VSMain(
 PSOutput PSMain(PSInput input)
 {
     PSOutput p;
-    p.rt0 = g_texture.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    p.rt0 = rt_deferred.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    // p.rt0 = rt_AO.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
     // p.rt1=p.rt0;
     return p;
 }

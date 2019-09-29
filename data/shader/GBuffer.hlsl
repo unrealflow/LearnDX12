@@ -26,6 +26,7 @@ PSInput VSMain(
     result.w_pos=position;
     result.position=float4(position.xyz,1.0);
     result.position=mul(result.position,buf.view);
+    result.w_pos.w=result.position.z;
     result.position=mul(result.position,buf.projection);
     result.normal=normal;
     result.uv=uv;
