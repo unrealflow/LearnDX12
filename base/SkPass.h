@@ -3,7 +3,7 @@
 #include "SkTarget.h"
 #include "SkMesh.h"
 
-class SkPass
+class SkPass:public ISkPass
 {
 private:
     SkBase *base = nullptr;
@@ -11,7 +11,7 @@ private:
     std::vector<SkMesh *> meshes;
     std::unordered_map<uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE> tableDescs;
     std::unordered_map<uint32_t, D3D12_GPU_VIRTUAL_ADDRESS> constDescs;
-    SkTarget *RT;
+    ISkTarget *RT;
 public:
     SkPass() {}
     ~SkPass() {}
@@ -99,28 +99,18 @@ public:
         }
         RT->AftBarrier(cmd, index);
     }
-    void CreateRoot(std::vector<CD3DX12_ROOT_PARAMETER1> &rootParameters, SkTarget *rt) //,std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
+    void CreateRoot(std::vector<CD3DX12_ROOT_PARAMETER1> *rootParameters, ISkTarget *rt) //,std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
     {
         this->RT = rt;
-        // Create an empty root signature.
-        D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-
-        // This is the highest version the sample supports. If CheckFeatureSupport succeeds, the HighestVersion returned will not be greater than this.
-        featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-
-        if (FAILED(base->device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
-        {
-            featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-        }
-
+     
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init_1_1((uint32_t)rootParameters.size(), rootParameters.data(), 1,
-                                   &InitSampler(), D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        rootSignatureDesc.Init_1_1((uint32_t)rootParameters->size(), rootParameters->data(), 1,
+                                   &base->sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;
         SK_CHECK_MSG(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc,
-                                                           featureData.HighestVersion,
+                                                           base->featureData.HighestVersion,
                                                            &signature, &error),
                      error);
         SK_CHECK(base->device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&this->root)));

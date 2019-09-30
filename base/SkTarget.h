@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "SkBase.h"
 #include "SkHeap.h"
-class SkTarget
+class ISkTarget
 {
 private:
     /* data */
@@ -13,7 +13,7 @@ public:
     virtual void AftBarrier(ComPtr<ID3D12GraphicsCommandList> cmd, uint32_t index) = 0;
 };
 
-class SkDefaultRT : public SkTarget
+class SkDefaultRT : public ISkTarget
 {
 private:
     SkBase *base;
@@ -46,7 +46,7 @@ public:
     }
 };
 
-class SkImageRT : public SkTarget
+class SkImageRT : public ISkTarget
 {
 private:
     SkBase *base;
@@ -128,7 +128,7 @@ public:
     }
 };
 
-class SkGBufferRT : public SkTarget
+class SkGBufferRT : public ISkTarget
 {
 private:
     SkBase *base = nullptr;

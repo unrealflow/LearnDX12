@@ -22,7 +22,7 @@ Texture2D normal : register(t3);
 Texture2D albedo : register(t4);
 Texture2D AO : register(t5);
 SamplerState g_sampler : register(s0);
-ConstantBuffer<UniformBuffer> buf : register(b0);
+ConstantBuffer<UniformBuffer>  buf : register(b0);
 PSInput VSMain(
     uint ID :SV_VERTEXID)
 {
@@ -73,7 +73,7 @@ float GetAO(float2 uv)
                 continue;
             }
             totalWeight+=weight;
-            ao+=AO.Sample(g_sampler,uv+float2(i,j)*stride).x;
+            ao+=weight*AO.Sample(g_sampler,uv+float2(i,j)*stride).x;
         }
     }
 
@@ -110,7 +110,7 @@ PSOutput PSMain(PSInput input)
     float3 ref_dir=reflect(-viewDir,_nor);
     float2 ref_uv=DirToUV(ref_dir);
     float3 ref_color=bk_texture.SampleLevel(g_sampler,ref_uv,mat.roughness*10.0);
-    float3 dif_color=_albedo*0.3;
+    float3 dif_color=_albedo*0.5;
     float ref_factor=(1.0-mat.roughness)*F_Schlick(dot(_nor,viewDir) ,kS);
     _color+=lerp(ref_color*ref_factor,dif_color,mat.roughness);
     _color=pow(_color,float3(0.45,0.45,0.45));

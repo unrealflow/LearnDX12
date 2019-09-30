@@ -18,7 +18,7 @@
         {                                                                              \
             if (_msg_.Get() != nullptr)                                                \
             {                                                                          \
-                fprintf(stderr, "ERROR: %s", (char *)_msg_->GetBufferPointer());       \
+                fprintf(stderr, "ERROR:\n%s", (char *)_msg_->GetBufferPointer());       \
             }                                                                          \
             fprintf(stderr, "ERROR: HRESULT of 0x%08X\t", static_cast<UINT>(_h_res_)); \
             std::cout << "In " << __FILE__ << " at line " << __LINE__ << std::endl;    \

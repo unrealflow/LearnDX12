@@ -51,38 +51,50 @@ private:
             SK_CHECK(base->device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData)));
             fprintf(stderr, "RaytracingSupport : %s...\n", featureSupportData.RaytracingTier ? "True" : "False");
         }
-        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+        {
+            D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+            queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+            queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-        SK_CHECK(base->device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&base->cmdQueue)));
+            SK_CHECK(base->device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&base->cmdQueue)));
+        }
 
-        // Describe and create the swap chain.
-        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-        swapChainDesc.BufferCount = base->imageCount;
-        swapChainDesc.Width = base->width;
-        swapChainDesc.Height = base->height;
-        swapChainDesc.Format = base->format;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-        swapChainDesc.SampleDesc.Count = 1;
+        { // Describe and create the swap chain.
+            DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+            swapChainDesc.BufferCount = base->imageCount;
+            swapChainDesc.Width = base->width;
+            swapChainDesc.Height = base->height;
+            swapChainDesc.Format = base->format;
+            swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+            swapChainDesc.SampleDesc.Count = 1;
 
-        ComPtr<IDXGISwapChain1> swapChain;
-        SK_CHECK(factory->CreateSwapChainForHwnd(
-            base->cmdQueue.Get(), // Swap chain needs the queue so that it can force a flush on it.
-            base->hwnd,
-            &swapChainDesc,
-            nullptr,
-            nullptr,
-            &swapChain));
-        // This sample does not support fullscreen transitions.
-        SK_CHECK(factory->MakeWindowAssociation(base->GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
+            ComPtr<IDXGISwapChain1> swapChain;
+            SK_CHECK(factory->CreateSwapChainForHwnd(
+                base->cmdQueue.Get(), // Swap chain needs the queue so that it can force a flush on it.
+                base->hwnd,
+                &swapChainDesc,
+                nullptr,
+                nullptr,
+                &swapChain));
+            // This sample does not support fullscreen transitions.
+            SK_CHECK(factory->MakeWindowAssociation(base->GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
 
-        SK_CHECK(swapChain.As(&base->swapChain));
-        base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
-        base->heap = &heap;
-        heap.Init(base, base->imageCount + 10, 10, 1);
+            SK_CHECK(swapChain.As(&base->swapChain));
+            base->imageIndex = base->swapChain->GetCurrentBackBufferIndex();
+            base->heap = &heap;
+            heap.Init(base, base->imageCount + 10, 10, 1);
+        }
+        {
 
+            // This is the highest version the sample supports. If CheckFeatureSupport succeeds, the HighestVersion returned will not be greater than this.
+            base->featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+            if (FAILED(base->device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &base->featureData, sizeof(base->featureData))))
+            {
+                base->featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+            }
+        }
         // Create frame resources.
         {
             // CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(base->rtvHeap->GetCPUDescriptorHandleForHeapStart());

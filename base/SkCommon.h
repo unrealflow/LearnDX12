@@ -41,3 +41,8 @@ struct SkBuffer
     }
 };
 class SkHeap;
+class ISkPass
+{
+public:
+    virtual void CmdSet(ComPtr<ID3D12GraphicsCommandList> cmd, uint32_t index)=0;
+};

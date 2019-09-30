@@ -6,6 +6,8 @@
 #include "SkModel.h"
 #include "SkController.h"
 #include "SkAgent.h"
+#include "SkTarget.h"
+#include "SkComputer.h"
 
 SkTex tex;
 SkTex bk;
@@ -14,6 +16,7 @@ SkPass p_gbuffer;
 SkPass p_deferred;
 SkPass p_post;
 SkPass p_AO;
+SkComputer p_blur;
 
 //rtv [3,4,5]
 //srv [2,3,4]
@@ -55,7 +58,7 @@ void SkApp::Setup()
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
 
-        p_gbuffer.CreateRoot(rootParameters, &rt_gbuffer);
+        p_gbuffer.CreateRoot(&rootParameters, &rt_gbuffer);
         p_gbuffer.AddMesh(&model.mesh);
         p_gbuffer.CreatePipeline(model.inputDescs, L"shader/GBuffer.hlsl");
         p_gbuffer.AddDesc(0, base->heap->GetHeapSRV());
@@ -75,13 +78,24 @@ void SkApp::Setup()
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
 
-        
-        p_AO.CreateRoot(rootParameters,&rt_AO);
+        p_AO.CreateRoot(&rootParameters, &rt_AO);
         p_AO.CreatePipeline(model.inputDescs, L"shader/AO.hlsl");
-        p_AO.AddDesc(0,base->heap->GetHeapSRV(),2);
+        p_AO.AddDesc(0, base->heap->GetHeapSRV(), 2);
         p_AO.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
 
         cmd.AddPass(&p_AO);
+    }
+    {
+        p_blur.Init(base);
+
+        p_blur.CreateRoot(nullptr);
+        p_blur.CreatePipeline(L"shader/Blur.hlsl");
+        // p_blur.CreateInputView(rt_gbuffer.albedo.Get(),rt_gbuffer.GetFormat(0));
+        p_blur.CreateInputView(rt_AO.texture.Get(),rt_AO.GetFormat(0));
+        // p_blur.CreateOutputView(rt_AO.texture.Get(),rt_AO.GetFormat(0));
+        p_blur.UseDefaultTexture(rt_AO.GetFormat(0));
+        
+        cmd.AddPass(&p_blur);
     }
     {
         //input : tex,bk ,GBuffer,AO
@@ -97,7 +111,7 @@ void SkApp::Setup()
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
 
-        p_deferred.CreateRoot(rootParameters, &rt_deferred);
+        p_deferred.CreateRoot(&rootParameters, &rt_deferred);
         p_deferred.CreatePipeline(model.inputDescs, L"shader/Deferred.hlsl");
         p_deferred.AddDesc(0, base->heap->GetHeapSRV());
         p_deferred.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
@@ -115,7 +129,7 @@ void SkApp::Setup()
         rootParameters[1].InitAsConstantBufferView(0);
 
         rt_post.Init(base);
-        p_post.CreateRoot(rootParameters, &rt_post);
+        p_post.CreateRoot(&rootParameters, &rt_post);
         p_post.CreatePipeline(model.inputDescs, L"shader/Post.hlsl");
         p_post.AddDesc(0, base->heap->GetHeapSRV(), 2);
         p_post.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());

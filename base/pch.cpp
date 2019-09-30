@@ -9,3 +9,4 @@
 #include "SkPass.h"
 #include "SkTarget.h"
 #include "SkHeap.h"
+#include "SkComputer.h"

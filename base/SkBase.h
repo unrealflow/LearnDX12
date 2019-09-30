@@ -24,12 +24,11 @@ public:
     ComPtr<ID3D12CommandQueue> cmdQueue;
     SkHeap *heap = nullptr;
     ComPtr<ID3D12Resource> depthTarget;
-    ComPtr<ID3D12PipelineState> pipelineState;
-    // ComPtr<ID3D12GraphicsCommandList> cmdList;
+
     SkCamera cam;
     // bool useWarpDevice = false;
-
-    ComPtr<ID3D12RootSignature> rootSignature;
+    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+    const D3D12_STATIC_SAMPLER_DESC sampler=InitSampler();
     SkInclude include;
 
     HWND GetHwnd()

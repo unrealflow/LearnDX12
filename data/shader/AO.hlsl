@@ -53,14 +53,13 @@ PSOutput PSMain(PSInput input)
     float2 uv=float2(input.uv.x,1.0-input.uv.y);
     PSOutput p;
     float4 pos_depth  = position.Sample(g_sampler, uv);
-    if(pos_depth.w>-0.0001)
+    if(pos_depth.w<0.0001)
     {
         p.rt0=0.0;
         return p;
     }
     float3 _nor = normal.Sample(g_sampler,uv).xyz;
     float radius=0.5;
-    float depth=-pos_depth.w;
     uint size=3;
     uint count=size*size*size;
     float weight=0.0;
@@ -69,18 +68,25 @@ PSOutput PSMain(PSInput input)
         float3 pos=pos_depth.xyz;
         int3 signs=sign(pos);
         int bias=dot(signs+2,int3(1,2,3));
-        pos+=radius*noise3(i,size,pos);
+        float3 _noise=noise3(i,size,pos);
+        pos+=  radius*_noise*dot(_noise,_nor);
         float4 v_pos=mul(float4(pos,1.0),buf.view);
+        float depth=-v_pos.z;
         v_pos=mul(v_pos,buf.projection);
         v_pos/=v_pos.w;
         v_pos=v_pos*0.5+0.5;
         v_pos.y=1.0-v_pos.y;
-        float cur_depth=-position.Sample(g_sampler,v_pos.xy).w;
-        float rangeCheck = smoothstep(0.0, 1.0, radius / abs(depth - cur_depth));
+        float cur_depth=position.Sample(g_sampler,v_pos.xy).w;
+        if(cur_depth<0.0001)
+        {
+            weight+=0.0;
+            continue;
+        }
+        float rangeCheck = smoothstep(  radius ,radius*0.8, abs(depth - cur_depth));
         weight += (depth >= cur_depth ? 1.0 : 0.0) * rangeCheck;   
     }
 
-    p.rt0=min((1.0-weight/count)*3.0,2.0);
+    p.rt0=min((1.0-weight/count)*1.0,1.0);
     // p.rt0=0.5;
     return p;
 }

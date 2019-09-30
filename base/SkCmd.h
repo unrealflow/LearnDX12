@@ -11,7 +11,7 @@ private:
     std::vector<ComPtr<ID3D12GraphicsCommandList4>> cmdLists;
     std::vector<SkFence> fences;
     // std::unordered_map<uint32_t,std::vector<SkMesh *>> meshes;
-    std::vector<SkPass *> passes;
+    std::vector<ISkPass *> passes;
 
     void CreateFence()
     {
@@ -35,7 +35,7 @@ public:
     {
         // meshes[p].emplace_back(mesh);
     }
-    void AddPass(SkPass *pass)
+    void AddPass(ISkPass *pass)
     {
         this->passes.push_back(pass);
     }
