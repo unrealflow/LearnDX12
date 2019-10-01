@@ -42,7 +42,7 @@ void SkApp::Setup()
     }
     {
         //srv [1]
-        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"), 8);
+        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"), 1);
         bk.Setup(1);
     }
     {

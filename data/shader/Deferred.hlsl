@@ -57,14 +57,14 @@ float3 UVToDir(float3 _front,float2 uv)
 }
 float GetAO(float2 uv)
 {
-    int size=4;
+    int size=0;
 
     float ao=0.0;
     float stride=0.001;
     float totalWeight=0.0;
     for(int i=-size;i<=size;i++)
     {
-        for(int j=-size;j<size;j++)
+        for(int j=-size;j<=size;j++)
         {
 
             float weight=size- sqrt(float(i*i+j*j));
@@ -96,7 +96,8 @@ PSOutput PSMain(PSInput input)
     float3 viewDir=normalize(buf.camPos-_pos);
     float3 lightDir=lightPos-_pos;
     float lightDis=length(lightDir);
-    float ao=GetAO(uv);
+    // float ao=GetAO(uv);
+    float ao=AO.Sample(g_sampler,uv);
     _albedo*=ao;
     lightDir=lightDir/lightDis;
 

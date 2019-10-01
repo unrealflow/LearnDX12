@@ -30,8 +30,8 @@ PSInput VSMain(
 PSOutput PSMain(PSInput input)
 {
     PSOutput p;
-    // p.rt0 = rt_deferred.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
-    p.rt0 = rt_AO.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    p.rt0 = rt_deferred.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    // p.rt0 = rt_AO.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
     // p.rt1=p.rt0;
     return p;
 }
