@@ -93,12 +93,13 @@ PSOutput PSMain(PSInput input)
     }
     float3 _nor = normal.Sample(g_sampler, uv).xyz;
     float3 _albedo = albedo.Sample(g_sampler, uv).xyz;
-    float3 viewDir=normalize(buf.camPos-_pos);
-    float3 lightDir=lightPos-_pos;
-    float lightDis=length(lightDir);
     // float ao=GetAO(uv);
     float ao=AO.Sample(g_sampler,uv);
     _albedo*=ao;
+    float3 viewDir=normalize(buf.camPos-_pos);
+    float3 lightDir=lightPos-_pos;
+    float lightDis=length(lightDir);
+    
     lightDir=lightDir/lightDis;
 
     float f=lightPower/(lightDis*lightDis);
