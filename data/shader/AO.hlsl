@@ -59,7 +59,7 @@ PSOutput PSMain(PSInput input)
         return p;
     }
     float3 _nor = normal.Sample(g_sampler,uv).xyz;
-    float radius=0.5;
+    float radius=1.5;
     uint size=3;
     uint count=size*size*size;
     float weight=0.0;

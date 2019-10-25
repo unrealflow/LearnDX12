@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "SkBase.h"
 #include "SkMesh.h"
+#include "SkTex.h"
+#include "SkMaterial.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -96,10 +98,11 @@ public:
 private:
     // SkBase *base;
     SkAgent *agent;
-    static const int defaultFlags = aiProcess_ConvertToLeftHanded| aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
+    static const int defaultFlags = aiProcess_ConvertToLeftHanded | aiProcess_FlipWindingOrder | aiProcess_Triangulate | aiProcess_PreTransformVertices | aiProcess_CalcTangentSpace | aiProcess_GenSmoothNormals;
 
 public:
     SkMesh mesh;
+    SkMatSet matSet;
     VertexLayout layout;
     // uint32_t indexCount = 0;
     // uint32_t vertexCount = 0;
@@ -111,10 +114,10 @@ public:
         vec3 size;
     } dim;
 
-    void Init(SkAgent*initAgent)
+    void Init(SkAgent *initAgent)
     {
         // base = initBase;
-        agent=initAgent;
+        agent = initAgent;
         mesh.Init(agent);
         // matSet.Init(mem);
         layout = {{
@@ -123,6 +126,7 @@ public:
             VERTEX_COMPONENT_UV,
         }};
         RebuildInputDescription();
+        matSet.Init(initAgent);
     }
     //根据设置生成InputBindingDescription
     void RebuildInputDescription(UINT semanticIndex = 0, UINT inputSlot = 0)
@@ -192,23 +196,19 @@ public:
         }
 
         std::string directory;
-        switch (path[0])
         {
-        case 'C':
-        case 'D':
-        case 'E':
-        case 'F':
-        case 'G':
-        case 'Z':
-        case '.':
-            if (path[1] == '/' || path[1] == '\\')
+            int loc0 = (int)path.find_last_of('/');
+            int loc1 = (int)path.find_last_of('\\');
+            
+            int loc = loc0 > loc1 ? loc0 : loc1;
+            if (loc >= 0)
             {
-                directory = path.substr(0, path.find_last_of('/'));
+                directory = path.substr(0, loc);
             }
-            break;
-        default:
-            directory = ".";
-            break;
+            else
+            {
+                directory = ".";
+            }
         }
         if (pScene)
         {
@@ -223,7 +223,7 @@ public:
             }
             mesh.vertexCount = 0;
             mesh.indexCount = 0;
-            mesh.stride=layout.stride();
+            mesh.stride = layout.stride();
             if (_layout != nullptr)
             {
                 this->layout = VertexLayout(*_layout);
@@ -308,7 +308,6 @@ public:
                 }
                 dim.size = dim.max - dim.min;
                 mesh.subMeshes[i].vertexCount = paiMesh->mNumVertices;
-
                 uint32_t indexBase = static_cast<uint32_t>(mesh.indexData.size());
                 for (unsigned int j = 0; j < paiMesh->mNumFaces; j++)
                 {
@@ -321,9 +320,9 @@ public:
                     mesh.subMeshes[i].indexCount += 3;
                     mesh.indexCount += 3;
                 }
+                matSet.AddMat(material,mesh.subMeshes[i].indexCount/3);
             }
         }
-        fprintf(stderr,"Model Size\tV : %d\tI : %d...\n",mesh.vertexCount,mesh.indexCount);
-        
+        fprintf(stderr, "Model Size\tV : %d\tI : %d...\n", mesh.vertexCount, mesh.indexCount);
     }
 };

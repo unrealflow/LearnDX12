@@ -23,6 +23,8 @@ Texture2D albedo : register(t4);
 Texture2D AO : register(t5);
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer>  buf : register(b0);
+ConstantBuffer<MatBufPack> matPack :register(b1);
+
 PSInput VSMain(
     uint ID :SV_VERTEXID)
 {
@@ -79,10 +81,13 @@ float GetAO(float2 uv)
 
     return ao/totalWeight;
 }
-PSOutput PSMain(PSInput input)
+
+PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
 {
+    
     float2 uv=float2(input.uv.x,1.0-input.uv.y);
     PSOutput p;
+
     float3 _pos = position.Sample(g_sampler, uv).xyz;
     if(length(_pos)<0.01)
     {
@@ -91,7 +96,9 @@ PSOutput PSMain(PSInput input)
         // p.rt0=bk_texture.Sample(g_sampler,DirToUV(dir));
         return p;
     }
-    float3 _nor = normal.Sample(g_sampler, uv).xyz;
+    float4 normalSample=normal.Sample(g_sampler, uv);
+    float3 _nor = normalSample.xyz;
+    uint meshID=uint(normalSample.w);
     float3 _albedo = albedo.Sample(g_sampler, uv).xyz;
     // float ao=GetAO(uv);
     float ao=AO.Sample(g_sampler,uv);
@@ -105,9 +112,8 @@ PSOutput PSMain(PSInput input)
     float f=lightPower/(lightDis*lightDis);
     float3 _color=f*_albedo;
     float3 kS;
-    SkMat mat;
-    mat.roughness=0.3;
-    mat.metallic=0.3;
+    SkMat mat=GetMat(matPack.m,meshID);
+
     _color= BRDF(mat,_color,lightDir,viewDir,_nor,kS);
     float3 ref_dir=reflect(-viewDir,_nor);
     float2 ref_uv=DirToUV(ref_dir);

@@ -29,10 +29,6 @@ SkImageRT rt_AO;
 void SkApp::Setup()
 {
 
-    model.Init(&agent);
-    model.ImportModel(GetAssetFullPath("model/vk.obj"));
-
-    model.mesh.Setup();
     con.Setup();
     // tex.InitCheckerboard();
     {
@@ -41,8 +37,16 @@ void SkApp::Setup()
         tex.Setup(0);
     }
     {
+        model.Init(&agent);
+        // model.ImportModel(GetAssetFullPath("model/vk.obj"));
+        model.ImportModel(GetAssetFullPath("model/model.obj"));
+
+        model.mesh.Setup();
+        model.matSet.Setup();
+    }
+    {
         //srv [1]
-        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"), 1);
+        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"), 8);
         bk.Setup(1);
     }
     {
@@ -54,15 +58,19 @@ void SkApp::Setup()
         p_gbuffer.Init(base);
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{2};
+        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{4};
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
+        rootParameters[2].InitAsConstantBufferView(1);
+        rootParameters[3].InitAsConstantBufferView(2);
 
         p_gbuffer.CreateRoot(&rootParameters, &rt_gbuffer);
         p_gbuffer.AddMesh(&model.mesh);
         p_gbuffer.CreatePipeline(model.inputDescs, L"shader/GBuffer.hlsl");
         p_gbuffer.AddDesc(0, base->heap->GetHeapSRV());
         p_gbuffer.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+        p_gbuffer.AddDesc(2, model.matSet.infoBuf.buf->GetGPUVirtualAddress());
+        p_gbuffer.AddDesc(3, model.matSet.matBuf.buf->GetGPUVirtualAddress());
 
         cmd.AddPass(&p_gbuffer);
     }
@@ -91,10 +99,10 @@ void SkApp::Setup()
         p_blur.CreateRoot(nullptr);
         p_blur.CreatePipeline(L"shader/Blur.hlsl");
         // p_blur.CreateInputView(rt_gbuffer.albedo.Get(),rt_gbuffer.GetFormat(0));
-        p_blur.CreateInputView(rt_AO.texture.Get(),rt_AO.GetFormat(0));
+        p_blur.CreateInputView(rt_AO.texture.Get(), rt_AO.GetFormat(0));
         // p_blur.CreateOutputView(rt_AO.texture.Get(),rt_AO.GetFormat(0));
         p_blur.UseDefaultTexture(rt_AO.GetFormat(0));
-        
+
         cmd.AddPass(&p_blur);
     }
     {
@@ -107,14 +115,17 @@ void SkApp::Setup()
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
 
-        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{2};
+        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{4};
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
+        rootParameters[2].InitAsConstantBufferView(1);
 
         p_deferred.CreateRoot(&rootParameters, &rt_deferred);
         p_deferred.CreatePipeline(model.inputDescs, L"shader/Deferred.hlsl");
         p_deferred.AddDesc(0, base->heap->GetHeapSRV());
         p_deferred.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+        p_deferred.AddDesc(2, model.matSet.matBuf.buf->GetGPUVirtualAddress());
+
         cmd.AddPass(&p_deferred);
     }
     {

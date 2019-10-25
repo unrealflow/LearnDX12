@@ -21,7 +21,7 @@ public:
     } uniformBuffer;
     struct
     {
-        bool alt = false;
+        bool alt = true;
         bool left = false;
         bool mid = false;
         bool right = false;
@@ -41,7 +41,7 @@ public:
         // TODO:
         Vector3 right = DirectX::XMVector3Cross(eyePos - focusPos, up);
         up = DirectX::XMVector3Cross(right, eyePos - focusPos);
-        cam->SetLens(DirectX::XMConvertToRadians(90.0f), (float)base->width / base->height, 0.01f, 100.0f);
+        cam->SetLens(DirectX::XMConvertToRadians(45.0f), (float)base->width / base->height, 0.01f, 100.0f);
         cam->SetLookAt(eyePos, Vector3(0.0f), up);
         cam->UpdateView();
         // Show(cam->proj);
@@ -99,6 +99,10 @@ public:
             {
                 cam->FocusOn(dx, dy);
             }
+        }else if(mouse.mid)
+        {
+            cam->Lift(-dy*10.0f);
+            cam->Strafe(dx*10.0f);
         }
         mouse.pos.x = x;
         mouse.pos.y = y;
@@ -124,6 +128,12 @@ public:
             break;
         case WM_LBUTTONUP:
             Event_LButton(wParam, lParam, false);
+            break;
+        case WM_MBUTTONDOWN:
+            Event_MButton(wParam, lParam, true);
+            break;
+        case WM_MBUTTONUP:
+            Event_MButton(wParam, lParam, false);
             break;
         case WM_MOUSEMOVE:
             break;
@@ -171,6 +181,10 @@ public:
     void Event_LButton(WPARAM wParam, LPARAM lParam, bool isDown)
     {
         mouse.left = isDown;
+    }
+    void Event_MButton(WPARAM wParam, LPARAM lParam, bool isDown)
+    {
+        mouse.mid = isDown;
     }
     void Event_Wheel(LPARAM wParam)
     {

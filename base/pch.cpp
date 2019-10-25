@@ -10,3 +10,4 @@
 #include "SkTarget.h"
 #include "SkHeap.h"
 #include "SkComputer.h"
+#include "SkMaterial.h"

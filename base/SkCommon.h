@@ -39,6 +39,12 @@ struct SkBuffer
     {
         buf->Unmap(0, nullptr);
     }
+    void Load(void *src)
+    {
+        this->Map();
+        memcpy(data,src,bufSize);
+        this->Unmap();
+    }
 };
 class SkHeap;
 class ISkPass

@@ -43,7 +43,8 @@ public:
             D3D12_HEAP_FLAG_NONE,
             &textureDesc,
             D3D12_RESOURCE_STATE_COMMON,
-            &clearValue,
+            // &clearValue,
+            nullptr,
             IID_PPV_ARGS(&texture)));
 
         CreateOutputView(this->texture.Get(), format);

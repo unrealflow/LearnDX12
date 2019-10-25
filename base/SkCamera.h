@@ -21,7 +21,7 @@ public:
         if (true == needUpdate)
         {
             view = Matrix::CreateLookAt(this->pos, this->pos + this->front, this->up);
-            upTime=GetMilliTime();
+            upTime = GetMilliTime();
             needUpdate = false;
         }
     }
@@ -71,7 +71,11 @@ public:
         this->up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(this->right, this->front));
         this->view = Matrix::CreateLookAt(this->pos, target, this->up);
     }
-
+    void Lift(float d)
+    {
+        this->pos += d * this->up;
+        this->needUpdate = true;
+    }
     void Strafe(float d)
     {
         this->pos += d * this->right;
