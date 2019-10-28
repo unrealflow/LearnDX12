@@ -11,8 +11,9 @@ public:
     virtual std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> Get(int index) = 0;
     virtual void PreBarrier(ComPtr<ID3D12GraphicsCommandList> cmd, uint32_t index) = 0;
     virtual void AftBarrier(ComPtr<ID3D12GraphicsCommandList> cmd, uint32_t index) = 0;
+    virtual bool ShouldClear() { return true; }
 };
-
+//Use SwapChain's handle
 class SkDefaultRT : public ISkTarget
 {
 private:
@@ -52,7 +53,7 @@ private:
     SkBase *base;
     D3D12_CPU_DESCRIPTOR_HANDLE srvHandle;
     D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-
+    bool shouldClear=true;
     void CreateResource()
     {
         D3D12_RESOURCE_DESC textureDesc = {};
@@ -75,7 +76,7 @@ private:
             &clearValue,
             IID_PPV_ARGS(&texture)));
     }
-    void CreateView( D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,D3D12_CPU_DESCRIPTOR_HANDLE srvHandle)
+    void CreateView(D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, D3D12_CPU_DESCRIPTOR_HANDLE srvHandle)
     {
         this->srvHandle = srvHandle;
         this->rtvHandle = rtvHandle;
@@ -101,10 +102,16 @@ public:
         base = initBase;
         this->format = format;
     }
-    void Setup(SkHeap* heap, int rtvBegin, int srvBegin)
+    //Need 1 handle
+    void Setup(SkHeap *heap, int rtvBegin, int srvBegin,bool shouldClear=true)
     {
+        this->shouldClear=shouldClear;
         CreateResource();
-        CreateView(heap->GetRTV(rtvBegin),heap->GetSRV(srvBegin));
+        CreateView(heap->GetRTV(rtvBegin), heap->GetSRV(srvBegin));
+    }
+    virtual bool ShouldClear() override
+    {
+        return this->shouldClear;
     }
     virtual uint32_t Size() override
     {
@@ -127,7 +134,9 @@ public:
         return this->format;
     }
 };
-
+//Positon 
+//Normal 
+//Albedo
 class SkGBufferRT : public ISkTarget
 {
 private:

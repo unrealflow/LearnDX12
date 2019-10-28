@@ -15,6 +15,12 @@ Texture2D normal : register(t1);
 Texture2D albedo : register(t2);
 Texture2D rt_AO : register(t3);
 Texture2D rt_deferred : register(t4);
+
+Texture2D preImage : register(t5);
+Texture2D prePosition : register(t6);
+Texture2D preNormal : register(t7);
+
+
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer> buf : register(b0);
 PSInput VSMain(
@@ -30,7 +36,16 @@ PSInput VSMain(
 PSOutput PSMain(PSInput input)
 {
     PSOutput p;
-    p.rt0 = rt_deferred.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+    float4 color= preImage.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
+
+    color.xyz=lerp(color.xyz,pow(color.xyz,float3(0.45,0.45,0.45)),color.w);
+    // if(color.w>0.5)
+    // {
+    //     color.xyz=pow(color.xyz,float3(0.45,0.45,0.45));
+    // }
+    
+    p.rt0 =color;
+    // p.rt0 = rt_deferred.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
     // p.rt0 = rt_AO.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
     // p.rt1=p.rt0;
     return p;

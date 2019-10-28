@@ -3,7 +3,7 @@
 #include "SkTarget.h"
 #include "SkMesh.h"
 
-class SkPass:public ISkPass
+class SkPass : public ISkPass
 {
 private:
     SkBase *base = nullptr;
@@ -12,6 +12,7 @@ private:
     std::unordered_map<uint32_t, D3D12_GPU_DESCRIPTOR_HANDLE> tableDescs;
     std::unordered_map<uint32_t, D3D12_GPU_VIRTUAL_ADDRESS> constDescs;
     ISkTarget *RT;
+
 public:
     SkPass() {}
     ~SkPass() {}
@@ -32,9 +33,12 @@ public:
             return;
         meshes.emplace_back(mesh);
     }
-    void AddDesc(uint32_t index, ID3D12DescriptorHeap *heap, int offset = 0)
+    void AddDesc(uint32_t index, ID3D12DescriptorHeap *heap, int offset = 0, bool newHeap = true)
     {
-        pHeaps.push_back(heap);
+        if (newHeap)
+        {
+            pHeaps.push_back(heap);
+        }
         if (0 == offset)
         {
             tableDescs[index] = heap->GetGPUDescriptorHandleForHeapStart();
@@ -75,9 +79,12 @@ public:
         if (0 == meshes.size())
         {
             cmd->OMSetRenderTargets(RT->Size(), handles.data(), FALSE, nullptr);
-            for (uint32_t t = 0; t < RT->Size(); t++)
+            if (RT->ShouldClear())
             {
-                cmd->ClearRenderTargetView(handles[t], base->clearColor, 0, nullptr);
+                for (uint32_t t = 0; t < RT->Size(); t++)
+                {
+                    cmd->ClearRenderTargetView(handles[t], base->clearColor, 0, nullptr);
+                }
             }
             // Record commands.
             cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -102,7 +109,7 @@ public:
     void CreateRoot(std::vector<CD3DX12_ROOT_PARAMETER1> *rootParameters, ISkTarget *rt) //,std::vector<D3D12_INPUT_ELEMENT_DESC> &inputDescs)
     {
         this->RT = rt;
-     
+
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Init_1_1((uint32_t)rootParameters->size(), rootParameters->data(), 1,
                                    &base->sampler, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);

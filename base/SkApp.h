@@ -30,6 +30,7 @@ protected:
     void Loop()
     {
         MSG msg = {};
+        base->iFrame=0;
         float lastTime = GetMilliTime();
         while (msg.message != WM_QUIT)
         {
@@ -43,6 +44,7 @@ protected:
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
+            base->iFrame+=1;
         }
     }
     void CleanUp()

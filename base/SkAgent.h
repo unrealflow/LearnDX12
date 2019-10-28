@@ -7,6 +7,7 @@ class SkAgent
 private:
     SkBase *base;
     SkFence fence;
+
 public:
     void Init(SkBase *initBase)
     {

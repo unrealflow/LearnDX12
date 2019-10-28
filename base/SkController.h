@@ -21,7 +21,7 @@ public:
     } uniformBuffer;
     struct
     {
-        bool alt = true;
+        bool alt = false;
         bool left = false;
         bool mid = false;
         bool right = false;
@@ -66,6 +66,23 @@ public:
         bufDes.BufferLocation = uniBuf.buf->GetGPUVirtualAddress();
         bufDes.SizeInBytes = uniBuf.bufSize;
     }
+    float RadicalInverse(uint32_t Base, uint64_t i)
+    {
+        float Digit, Radical, Inverse;
+        Digit = Radical = 1.0f / (float)Base;
+        Inverse = 0.0f;
+        while (i)
+        {
+            // i余Base求出i在"Base"进制下的最低位的数
+            // 乘以Digit将这个数镜像到小数点右边
+            Inverse += Digit * (float)(i % Base);
+            Digit *= Radical;
+
+            // i除以Base即可求右一位的数
+            i /= Base;
+        }
+        return Inverse;
+    }
     void Update()
     {
         cam->Walking(base->delta);
@@ -73,6 +90,8 @@ public:
         cam->UpdateView();
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
+        uniformBuffer.projection.m[0][2] += (1.0f - 2.0f * RadicalInverse(5, base->iFrame)) / base->width;
+        uniformBuffer.projection.m[1][2] += (1.0f - 2.0f * RadicalInverse(3, base->iFrame)) / base->height;
         uniformBuffer.camPos = cam->pos;
         uniformBuffer.camFront = cam->front;
         uniformBuffer.iTime = base->timer;
@@ -99,10 +118,11 @@ public:
             {
                 cam->FocusOn(dx, dy);
             }
-        }else if(mouse.mid)
+        }
+        else if (mouse.mid)
         {
-            cam->Lift(-dy*10.0f);
-            cam->Strafe(dx*10.0f);
+            cam->Lift(-dy * 10.0f);
+            cam->Strafe(dx * 10.0f);
         }
         mouse.pos.x = x;
         mouse.pos.y = y;
@@ -189,6 +209,6 @@ public:
     void Event_Wheel(LPARAM wParam)
     {
         int pos = (int)(short)HIWORD(wParam) / 120;
-        cam->Walk((float)(pos));
+        cam->Zoom((float)(pos));
     }
 };

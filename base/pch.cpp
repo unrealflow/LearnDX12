@@ -11,3 +11,4 @@
 #include "SkHeap.h"
 #include "SkComputer.h"
 #include "SkMaterial.h"
+#include "SkAA.h"

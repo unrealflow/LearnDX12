@@ -46,6 +46,11 @@ struct SkBuffer
         this->Unmap();
     }
 };
+class SkCallback
+{
+public:
+    virtual void WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+};
 class SkHeap;
 class ISkPass
 {

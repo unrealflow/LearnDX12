@@ -6,6 +6,7 @@ class SkBase
 public:
     float timer;
     float delta;
+    uint32_t iFrame;
     uint32_t width;
     uint32_t height;
     std::string name;
@@ -39,9 +40,4 @@ public:
         }
         return hwnd;
     }
-};
-class SkCallback
-{
-public:
-    virtual void WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 };

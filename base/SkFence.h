@@ -9,7 +9,7 @@ private:
     UINT64 fenceValue;
 
 public:
-    //需要base->device和base->cmdQueue
+    //Need base->device and base->cmdQueue
     void Create(SkBase *initBase)
     {
         base = initBase;

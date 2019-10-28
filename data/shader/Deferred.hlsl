@@ -21,6 +21,11 @@ Texture2D position : register(t2);
 Texture2D normal : register(t3);
 Texture2D albedo : register(t4);
 Texture2D AO : register(t5);
+
+Texture2D preImage : register(t6);
+Texture2D prePosition : register(t7);
+Texture2D preNormal : register(t8);
+
 SamplerState g_sampler : register(s0);
 ConstantBuffer<UniformBuffer>  buf : register(b0);
 ConstantBuffer<MatBufPack> matPack :register(b1);
@@ -82,27 +87,20 @@ float GetAO(float2 uv)
     return ao/totalWeight;
 }
 
-PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
+float4 Render(float4 albedo,float4 normal,float2 uv)
 {
-    
-    float2 uv=float2(input.uv.x,1.0-input.uv.y);
-    PSOutput p;
-
-    float3 _pos = position.Sample(g_sampler, uv).xyz;
-    if(length(_pos)<0.01)
+    if(albedo.z<0.01)
     {
         float3 dir=UVToDir(buf.camFront,uv);
-        p.rt0=bk_texture.SampleLevel(g_sampler,DirToUV(dir),0.0);
         // p.rt0=bk_texture.Sample(g_sampler,DirToUV(dir));
-        return p;
+        return float4(bk_texture.SampleLevel(g_sampler,DirToUV(dir),0.0).xyz,0.0);
     }
-    float4 normalSample=normal.Sample(g_sampler, uv);
-    float3 _nor = normalSample.xyz;
-    uint meshID=uint(normalSample.w);
-    float3 _albedo = albedo.Sample(g_sampler, uv).xyz;
+    float3 _nor = normal.xyz;
+    uint meshID=uint(normal.w);
+    float3 _pos = position.Sample(g_sampler, uv).xyz;
     // float ao=GetAO(uv);
     float ao=AO.Sample(g_sampler,uv);
-    _albedo*=ao;
+    albedo.xyz*=ao;
     float3 viewDir=normalize(buf.camPos-_pos);
     float3 lightDir=lightPos-_pos;
     float lightDis=length(lightDir);
@@ -110,7 +108,7 @@ PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
     lightDir=lightDir/lightDis;
 
     float f=lightPower/(lightDis*lightDis);
-    float3 _color=f*_albedo;
+    float3 _color=f*albedo.xyz;
     float3 kS;
     SkMat mat=GetMat(matPack.m,meshID);
 
@@ -118,11 +116,46 @@ PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
     float3 ref_dir=reflect(-viewDir,_nor);
     float2 ref_uv=DirToUV(ref_dir);
     float3 ref_color=bk_texture.SampleLevel(g_sampler,ref_uv,mat.roughness*10.0);
-    float3 dif_color=_albedo*0.5;
+    float3 dif_color=albedo.xyz*0.5;
     float ref_factor=(1.0-mat.roughness)*F_Schlick(dot(_nor,viewDir) ,kS);
     _color+=lerp(ref_color*ref_factor,dif_color,mat.roughness);
-    _color=pow(_color,float3(0.45,0.45,0.45));
-    p.rt0=float4(_color,1.0);
+    return float4(_color,1.0);
+}
+float ev(float4 a,float4 b)
+{
+    return exp(length(a-b))-1.0;
+}
+PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
+{
+    
+    float2 uv=float2(input.uv.x,1.0-input.uv.y);
+    PSOutput p;
+    float4 _albedo = albedo.Sample(g_sampler, uv);
+    float4 _nor=normal.Sample(g_sampler,uv);
+    float4 color=Render(_albedo,_nor,uv);
+    float stride=0.0005;
+    float4 _preImage=preImage.Sample(g_sampler,uv);
+    float4 _preImage1=preImage.Sample(g_sampler,uv+float2(stride,0.0));
+    float4 _preImage2=preImage.Sample(g_sampler,uv-float2(stride,0.0));
+    float4 _preImage3=preImage.Sample(g_sampler,uv+float2(0.0,stride));
+    float4 _preImage4=preImage.Sample(g_sampler,uv-float2(0.0,stride));
+    _preImage.w=max(_preImage.w,max(max(_preImage1.w,_preImage2.w),max(_preImage3.w,_preImage4.w)));
+
+    float4 prePos=prePosition.Sample(g_sampler,uv);
+    float4 curPos=position.Sample(g_sampler,uv);
+    float4 preNor=preNormal.Sample(g_sampler,uv);
+
+    float d_p=ev(prePos,curPos);
+    float d_n=ev(preNor,_nor);
+
+
+    float t=0.6/(1.0+d_p+d_n);
+    t=clamp(t,0.0,0.95);
+    t=t+(0.95-t)*(color.w*0.5+_preImage.w*0.5);
+    
+    p.rt0=lerp(color,_preImage,t);
+    // p.rt0=clamp(p.rt0,_preImage-0.05,_preImage+0.05);
+    // p.rt0=color;
     // p.rt0=ao;
     return p;
 }

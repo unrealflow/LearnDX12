@@ -8,8 +8,12 @@
 #include "SkAgent.h"
 #include "SkTarget.h"
 #include "SkComputer.h"
+#include "SkAA.h"
 
+//srv [0]
 SkTex tex;
+
+//srv [1]
 SkTex bk;
 SkModel model;
 SkPass p_gbuffer;
@@ -22,10 +26,14 @@ SkComputer p_blur;
 //srv [2,3,4]
 SkGBufferRT rt_gbuffer;
 //rtv [6]
-//srv [4]
+//srv [5]
+SkImageRT rt_AO;
+//rtv [7]
+//srv [6]
 SkImageRT rt_deferred;
 SkDefaultRT rt_post;
-SkImageRT rt_AO;
+//srv[7,8,9]
+SkAA p_aa;
 void SkApp::Setup()
 {
 
@@ -46,7 +54,7 @@ void SkApp::Setup()
     }
     {
         //srv [1]
-        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"), 8);
+        bk.Init(&agent, GetAssetFullPath("texture/scene.jpg"), 1);
         bk.Setup(1);
     }
     {
@@ -77,7 +85,7 @@ void SkApp::Setup()
     {
 
         rt_AO.Init(base);
-        rt_AO.Setup(base->heap, 6, 5);
+        rt_AO.Setup(base->heap, 6, 5, false);
 
         p_AO.Init(base);
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
@@ -109,22 +117,27 @@ void SkApp::Setup()
         //input : tex,bk ,GBuffer,AO
         //output: imageRT
         rt_deferred.Init(base);
-        rt_deferred.Setup(base->heap, 7, 6);
+        rt_deferred.Setup(base->heap, 7, 6, false);
 
         p_deferred.Init(base);
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+        CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 6, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 6, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+
 
         std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{4};
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
         rootParameters[2].InitAsConstantBufferView(1);
+        rootParameters[3].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+
 
         p_deferred.CreateRoot(&rootParameters, &rt_deferred);
         p_deferred.CreatePipeline(model.inputDescs, L"shader/Deferred.hlsl");
         p_deferred.AddDesc(0, base->heap->GetHeapSRV());
         p_deferred.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
         p_deferred.AddDesc(2, model.matSet.matBuf.buf->GetGPUVirtualAddress());
+        p_deferred.AddDesc(3, base->heap->GetHeapSRV(),7,false);
 
         cmd.AddPass(&p_deferred);
     }
@@ -132,19 +145,28 @@ void SkApp::Setup()
         //input :GBufferRT,AO,ImageRT
         //output :SwapChianImage
         p_post.Init(base);
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+        CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 5, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
 
-        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{2};
+        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{3};
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
+        rootParameters[2].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
 
         rt_post.Init(base);
         p_post.CreateRoot(&rootParameters, &rt_post);
         p_post.CreatePipeline(model.inputDescs, L"shader/Post.hlsl");
         p_post.AddDesc(0, base->heap->GetHeapSRV(), 2);
         p_post.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+        p_post.AddDesc(2, base->heap->GetHeapSRV(), 7, false);
+
         cmd.AddPass(&p_post);
+    }
+    {
+        p_aa.Init(base, &rt_gbuffer, &rt_deferred);
+        p_aa.Setup(base->heap, 7);
+        cmd.AddPass(&p_aa);
     }
     // cmd.AddMesh(&model.mesh);
     // cmd.AddMesh(&mesh);

@@ -25,10 +25,17 @@ public:
             needUpdate = false;
         }
     }
+    enum CameraType
+    {
+        LookAt,
+        FirstPerson
+    };
+    CameraType type=CameraType::LookAt;
     Vector3 pos = {0.0f, 0.0f, 0.0f};
     Vector3 right = {1.0f, 0.0f, 0.0f};
     Vector3 up = {0.0f, 1.0f, 0.0f};
     Vector3 front = {0.0f, 0.0f, 1.0f};
+    float distance=1.0;
     float upTime = 0.0f;
     bool needUpdate = false;
     Matrix proj;
@@ -44,6 +51,10 @@ public:
     } keys;
 
     Vector3 GetPosition() const { return pos; }
+    Vector3 GetTarget() const
+    {
+        return pos+distance*front;
+    }
     void SetPostion(float x, float y, float z)
     {
         pos.x = x;
@@ -66,6 +77,7 @@ public:
     void SetLookAt(const Vector3 &pos, const Vector3 &target, const Vector3 &up)
     {
         this->pos = pos;
+        this->distance=(target-pos).Length();
         this->front = DirectX::XMVector3Normalize(target - pos);
         this->right = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(this->front, up));
         this->up = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(this->right, this->front));
@@ -85,6 +97,11 @@ public:
     {
         this->pos += d * this->front;
         this->needUpdate = true;
+    }
+    void Zoom(float d)
+    {
+        this->distance-=d;
+        this->Walk(d);
     }
     void Walking(float delta)
     {
@@ -127,11 +144,12 @@ public:
     {
         Matrix R = Matrix::CreateRotationY(turnSpeed * angleY);
         R = R * DirectX::XMMatrixRotationAxis(this->right, turnSpeed * angleX);
-        this->pos = DirectX::XMVector3TransformCoord(this->pos, R);
+        Vector3 target=this->GetTarget();
         this->right = DirectX::XMVector3TransformNormal(this->right, R);
         this->up = DirectX::XMVector3TransformNormal(this->up, R);
         this->front = DirectX::XMVector3TransformNormal(this->front, R);
         this->Reortho();
+        this->pos=target-front*distance;
         this->needUpdate = true;
     }
     SkCamera(/* args */) {}
