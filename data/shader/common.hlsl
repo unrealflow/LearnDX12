@@ -6,6 +6,9 @@ struct UniformBuffer
 {
     float4x4 projection;
     float4x4 view;
+    float4x4 jitterProj;
+    float4x4 preProj;
+    float4x4 preView;
     float3 camPos;
     float iTime;
     float3 camFront;

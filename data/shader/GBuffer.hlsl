@@ -30,7 +30,15 @@ PSInput VSMain(
     result.position=float4(position.xyz,1.0);
     result.position=mul(result.position,buf.view);
     result.w_pos.w=-result.position.z;
-    result.position=mul(result.position,buf.projection);
+     if((buf.iTime-buf.upTime<0.01))
+    // if(length(gBufPos)>1e-5)
+    {
+        // curUV=GetUV(buf.view,buf.jitterProj,gBufPos.xyz);
+        result.position=mul(result.position,buf.projection);
+    }else
+    {
+        result.position=mul(result.position,buf.jitterProj);
+    }
     result.normal=normal;
     result.uv=uv;
     return result;

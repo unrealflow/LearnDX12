@@ -14,6 +14,9 @@ public:
     {
         Matrix projection;
         Matrix view;
+        Matrix jitterProj;
+        Matrix preProj;
+        Matrix preView;
         Vector3 camPos;
         float iTime;
         Vector3 camFront;
@@ -49,6 +52,9 @@ public:
         // uniformBuffer.view = Matrix::CreateLookAt(eyePos, Vector3(0.0f), up);
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
+        uniformBuffer.jitterProj = uniformBuffer.projection;
+        uniformBuffer.preProj = uniformBuffer.projection;
+        uniformBuffer.preView = uniformBuffer.view;
         uniformBuffer.camPos = cam->pos;
         uniformBuffer.camFront = cam->front;
     }
@@ -88,10 +94,13 @@ public:
         cam->Walking(base->delta);
         MouseProc();
         cam->UpdateView();
+        uniformBuffer.preProj = uniformBuffer.projection;
+        uniformBuffer.preView = uniformBuffer.view;
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
-        uniformBuffer.projection.m[0][2] += (1.0f - 2.0f * RadicalInverse(5, base->iFrame)) / base->width;
-        uniformBuffer.projection.m[1][2] += (1.0f - 2.0f * RadicalInverse(3, base->iFrame)) / base->height;
+        uniformBuffer.jitterProj = uniformBuffer.projection;
+        uniformBuffer.jitterProj.m[0][2] += (1.0f - 2.0f * RadicalInverse(5, base->iFrame)) / base->width;
+        uniformBuffer.jitterProj.m[1][2] += (1.0f - 2.0f * RadicalInverse(3, base->iFrame)) / base->height;
         uniformBuffer.camPos = cam->pos;
         uniformBuffer.camFront = cam->front;
         uniformBuffer.iTime = base->timer;
@@ -108,22 +117,26 @@ public:
         float y = (float)(point.y) / base->height;
         float dx = mouse.pos.x - x;
         float dy = mouse.pos.y - y;
-        if (mouse.left)
+        if (dx != 0.0f || dy != 0.0f)
         {
-            if (mouse.alt)
+            if (mouse.left)
             {
-                cam->Turn(dx, dy);
+                if (mouse.alt)
+                {
+                    cam->Turn(dx, dy);
+                }
+                else
+                {
+                    cam->FocusOn(dx, dy);
+                }
             }
-            else
+            else if (mouse.mid)
             {
-                cam->FocusOn(dx, dy);
+                cam->Lift(-dy * 10.0f);
+                cam->Strafe(dx * 10.0f);
             }
         }
-        else if (mouse.mid)
-        {
-            cam->Lift(-dy * 10.0f);
-            cam->Strafe(dx * 10.0f);
-        }
+
         mouse.pos.x = x;
         mouse.pos.y = y;
     }

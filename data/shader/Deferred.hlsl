@@ -86,14 +86,19 @@ float GetAO(float2 uv)
 
     return ao/totalWeight;
 }
-
+float3 GetBK(float2 uv,float level)
+{
+    float3 color=bk_texture.SampleLevel(g_sampler,uv,level);
+    color=pow(color,float3(2.2,2.2,2.2));
+    return color;
+}
 float4 Render(float4 albedo,float4 normal,float2 uv)
 {
     if(albedo.z<0.01)
     {
         float3 dir=UVToDir(buf.camFront,uv);
         // p.rt0=bk_texture.Sample(g_sampler,DirToUV(dir));
-        return float4(bk_texture.SampleLevel(g_sampler,DirToUV(dir),0.0).xyz,0.0);
+        return float4(GetBK(DirToUV(dir),0.0),0.0);
     }
     float3 _nor = normal.xyz;
     uint meshID=uint(normal.w);
@@ -115,7 +120,7 @@ float4 Render(float4 albedo,float4 normal,float2 uv)
     _color= BRDF(mat,_color,lightDir,viewDir,_nor,kS);
     float3 ref_dir=reflect(-viewDir,_nor);
     float2 ref_uv=DirToUV(ref_dir);
-    float3 ref_color=bk_texture.SampleLevel(g_sampler,ref_uv,mat.roughness*10.0);
+    float3 ref_color=GetBK(ref_uv,mat.roughness*10.0);
     float3 dif_color=albedo.xyz*0.5;
     float ref_factor=(1.0-mat.roughness)*F_Schlick(dot(_nor,viewDir) ,kS);
     _color+=lerp(ref_color*ref_factor,dif_color,mat.roughness);
@@ -125,35 +130,56 @@ float ev(float4 a,float4 b)
 {
     return exp(length(a-b))-1.0;
 }
+float2 GetUV(float4x4 view,float4x4 proj,float3 _pos)
+{
+    float4 pos=float4(_pos,1.0);
+    pos=mul(pos,view);
+    pos=mul(pos,proj);
+    pos/=pos.w;
+    pos=pos*0.5+0.5;
+    pos.y=1.0-pos.y;
+    return pos.xy;
+}
 PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
 {
     
     float2 uv=float2(input.uv.x,1.0-input.uv.y);
+    float4 gBufPos=position.Sample(g_sampler,uv);
+    float2 curUV=uv;
+    float2 preUV=uv;
+    //仅在VP矩阵变化时计算preUV
+    bool isMove=buf.iTime-buf.upTime<0.01;
+    if(length(gBufPos)>1e-5&&isMove)
+    // if(length(gBufPos)>1e-5)
+    {
+        // curUV=GetUV(buf.view,buf.jitterProj,gBufPos.xyz);
+        preUV=GetUV(buf.preView,buf.preProj,gBufPos.xyz);
+    }
+    float4 curPos=position.Sample(g_sampler,curUV);
     PSOutput p;
-    float4 _albedo = albedo.Sample(g_sampler, uv);
-    float4 _nor=normal.Sample(g_sampler,uv);
-    float4 color=Render(_albedo,_nor,uv);
+    float4 _albedo = albedo.Sample(g_sampler, curUV);
+    float4 _nor=normal.Sample(g_sampler,curUV);
+    float4 color=Render(_albedo,_nor,curUV);
     float stride=0.0005;
-    float4 _preImage=preImage.Sample(g_sampler,uv);
-    float4 _preImage1=preImage.Sample(g_sampler,uv+float2(stride,0.0));
-    float4 _preImage2=preImage.Sample(g_sampler,uv-float2(stride,0.0));
-    float4 _preImage3=preImage.Sample(g_sampler,uv+float2(0.0,stride));
-    float4 _preImage4=preImage.Sample(g_sampler,uv-float2(0.0,stride));
-    _preImage.w=max(_preImage.w,max(max(_preImage1.w,_preImage2.w),max(_preImage3.w,_preImage4.w)));
-
-    float4 prePos=prePosition.Sample(g_sampler,uv);
-    float4 curPos=position.Sample(g_sampler,uv);
-    float4 preNor=preNormal.Sample(g_sampler,uv);
+ 
+    
+    float4 _preImage=preImage.Sample(g_sampler,preUV);
+    float4 prePos=prePosition.Sample(g_sampler,preUV);
+    
+    float4 preNor=preNormal.Sample(g_sampler,preUV);
 
     float d_p=ev(prePos,curPos);
     float d_n=ev(preNor,_nor);
 
 
-    float t=0.6/(1.0+d_p+d_n);
+    float t=0.95/exp(d_p*2.0+d_n*0.2-2.0);
     t=clamp(t,0.0,0.95);
-    t=t+(0.95-t)*(color.w*0.5+_preImage.w*0.5);
+    float w=max(_preImage.w*isMove?0.5:0.96,color.w*t);
+    // t=t*w+(0.95-t);
     
-    p.rt0=lerp(color,_preImage,t);
+    p.rt0=lerp(color,_preImage,w);
+    p.rt0.w=w;
+    // p.rt0=t;
     // p.rt0=clamp(p.rt0,_preImage-0.05,_preImage+0.05);
     // p.rt0=color;
     // p.rt0=ao;

@@ -38,7 +38,7 @@ PSOutput PSMain(PSInput input)
     PSOutput p;
     float4 color= preImage.Sample(g_sampler, float2(input.uv.x,1.0-input.uv.y));
 
-    color.xyz=lerp(color.xyz,pow(color.xyz,float3(0.45,0.45,0.45)),color.w);
+    color.xyz=pow(color.xyz,float3(0.45,0.45,0.45));
     // if(color.w>0.5)
     // {
     //     color.xyz=pow(color.xyz,float3(0.45,0.45,0.45));
