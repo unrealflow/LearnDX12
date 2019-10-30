@@ -21,6 +21,7 @@ public:
         float iTime;
         Vector3 camFront;
         float upTime;
+        float delta;
     } uniformBuffer;
     struct
     {
@@ -57,6 +58,7 @@ public:
         uniformBuffer.preView = uniformBuffer.view;
         uniformBuffer.camPos = cam->pos;
         uniformBuffer.camFront = cam->front;
+        uniformBuffer.delta=0.016f;
     }
     void Setup()
     {
@@ -94,7 +96,7 @@ public:
         cam->Walking(base->delta);
         MouseProc();
         cam->UpdateView();
-        uniformBuffer.preProj = uniformBuffer.projection;
+        uniformBuffer.preProj = uniformBuffer.jitterProj;
         uniformBuffer.preView = uniformBuffer.view;
         uniformBuffer.projection = cam->proj.Transpose();
         uniformBuffer.view = cam->view.Transpose();
@@ -105,6 +107,7 @@ public:
         uniformBuffer.camFront = cam->front;
         uniformBuffer.iTime = base->timer;
         uniformBuffer.upTime = cam->upTime;
+        uniformBuffer.delta=base->delta;
         SK_CHECK(uniBuf.Map());
         memcpy(uniBuf.data, &uniformBuffer, uniBuf.bufSize);
         uniBuf.Unmap();

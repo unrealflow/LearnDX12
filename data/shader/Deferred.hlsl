@@ -148,8 +148,8 @@ PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
     float2 curUV=uv;
     float2 preUV=uv;
     //仅在VP矩阵变化时计算preUV
-    bool isMove=buf.iTime-buf.upTime<0.01;
-    if(length(gBufPos)>1e-5&&isMove)
+    float deltaTime=buf.iTime-buf.upTime;
+    if(length(gBufPos)>1e-5&&deltaTime<buf.delta)
     // if(length(gBufPos)>1e-5)
     {
         // curUV=GetUV(buf.view,buf.jitterProj,gBufPos.xyz);
@@ -160,6 +160,11 @@ PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
     float4 _albedo = albedo.Sample(g_sampler, curUV);
     float4 _nor=normal.Sample(g_sampler,curUV);
     float4 color=Render(_albedo,_nor,curUV);
+    if(color.w<0.1)
+    {
+        p.rt0=color;
+        return p;
+    }
     float stride=0.0005;
  
     
@@ -172,13 +177,17 @@ PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
     float d_n=ev(preNor,_nor);
 
 
-    float t=0.95/exp(d_p*2.0+d_n*0.2-2.0);
-    t=clamp(t,0.0,0.95);
-    float w=max(_preImage.w*isMove?0.5:0.96,color.w*t);
+    float f0=1.0/exp(d_p*2.0+d_n*0.2);
+    float factor = deltaTime / (deltaTime + buf.delta);
+    float minimum=0.8*f0;
+    float maximum=0.98;
+    factor=minimum+(maximum-minimum)*factor;
+    // float w=t*max(_preImage.w*isMove?0.5:0.96,color.w);
     // t=t*w+(0.95-t);
-    
-    p.rt0=lerp(color,_preImage,w);
-    p.rt0.w=w;
+    p.rt0=lerp(color,_preImage,factor);
+    float factor1 = buf.delta / (deltaTime + buf.delta);
+    p.rt0=clamp(p.rt0,_preImage-factor1,_preImage+factor1);
+    // p.rt0.w=w;
     // p.rt0=t;
     // p.rt0=clamp(p.rt0,_preImage-0.05,_preImage+0.05);
     // p.rt0=color;

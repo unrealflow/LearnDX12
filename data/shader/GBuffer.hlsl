@@ -33,12 +33,12 @@ PSInput VSMain(
      if((buf.iTime-buf.upTime<0.01))
     // if(length(gBufPos)>1e-5)
     {
-        // curUV=GetUV(buf.view,buf.jitterProj,gBufPos.xyz);
         result.position=mul(result.position,buf.projection);
     }else
     {
         result.position=mul(result.position,buf.jitterProj);
     }
+    // result.position/=result.position.w;
     result.normal=normal;
     result.uv=uv;
     return result;

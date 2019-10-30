@@ -13,6 +13,7 @@ struct UniformBuffer
     float iTime;
     float3 camFront;
     float upTime;
+    float delta;
 };
 struct SkMat
 {

@@ -6,6 +6,13 @@ RWTexture2D<float4> output:register(u1);
 
 static const int Size_X=3;
 static const int Size_Y=3;
+//Begin：为测试不同卷积核，在此计算权重，若要优化时可换成直接读取矩阵或数组的值
+float GetWeight(int i,int j)
+{
+    int max_dis=max(Size_X,Size_Y);
+    return max_dis- sqrt(float(i*i+j*j));
+}
+
 [numthreads(threadBlockSize, 1, 1)]
 void CSMain(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex)
 {
@@ -16,7 +23,7 @@ void CSMain(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex)
     {
         for(int j=-Size_Y;j<=Size_Y;j++)
         {
-            float weight=max_dis- sqrt(float(i*i+j*j));
+            float weight=GetWeight(i,j);
             if(weight<=0)
             {
                 continue;
