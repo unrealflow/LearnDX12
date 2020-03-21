@@ -57,7 +57,16 @@ SkMat GetMat(float4 m[MAX_MESH_COUNT*2],uint index)
     mat.metallic=p1.x;
     return mat;
 }
-
+float2 GetUV(float4x4 view,float4x4 proj,float3 _pos)
+{
+    float4 pos=float4(_pos,1.0);
+    pos=mul(pos,view);
+    pos=mul(pos,proj);
+    pos/=pos.w;
+    pos=pos*0.5+0.5;
+    pos.y=1.0-pos.y;
+    return pos.xy;
+}
 static const float PI=3.1415926535898;
 
 #endif

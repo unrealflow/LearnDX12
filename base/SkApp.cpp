@@ -18,7 +18,8 @@ SkTex bk;
 SkModel model;
 SkPass p_gbuffer;
 SkPass p_deferred;
-SkPass p_post;
+SkPass p_post0;
+SkPass p_post1;
 SkPass p_AO;
 SkComputer p_blur;
 
@@ -31,8 +32,11 @@ SkImageRT rt_AO;
 //rtv [7]
 //srv [6]
 SkImageRT rt_deferred;
-SkDefaultRT rt_post;
-//srv[7,8,9]
+//rtv [8]
+//srv [7]
+SkImageRT rt_post0;
+SkDefaultRT rt_post1;
+//srv[8,9,10]
 SkAA p_aa;
 void SkApp::Setup()
 {
@@ -102,16 +106,16 @@ void SkApp::Setup()
         cmd.AddPass(&p_AO);
     }
     {
-        p_blur.Init(base);
+        // p_blur.Init(base);
 
-        p_blur.CreateRoot(nullptr);
-        p_blur.CreatePipeline(L"shader/Blur.hlsl");
-        // p_blur.CreateInputView(rt_gbuffer.albedo.Get(),rt_gbuffer.GetFormat(0));
-        p_blur.CreateInputView(rt_AO.texture.Get(), rt_AO.GetFormat(0));
-        // p_blur.CreateOutputView(rt_AO.texture.Get(),rt_AO.GetFormat(0));
-        p_blur.UseDefaultTexture(rt_AO.GetFormat(0));
+        // p_blur.CreateRoot(nullptr);
+        // p_blur.CreatePipeline(L"shader/Blur.hlsl");
+        // // p_blur.CreateInputView(rt_gbuffer.albedo.Get(),rt_gbuffer.GetFormat(0));
+        // p_blur.CreateInputView(rt_AO.texture.Get(), rt_AO.GetFormat(0));
+        // // p_blur.CreateOutputView(rt_AO.texture.Get(),rt_AO.GetFormat(0));
+        // p_blur.UseDefaultTexture(rt_AO.GetFormat(0));
 
-        cmd.AddPass(&p_blur);
+        // cmd.AddPass(&p_blur);
     }
     {
         //input : tex,bk ,GBuffer,AO
@@ -137,14 +141,16 @@ void SkApp::Setup()
         p_deferred.AddDesc(0, base->heap->GetHeapSRV());
         p_deferred.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
         p_deferred.AddDesc(2, model.matSet.matBuf.buf->GetGPUVirtualAddress());
-        p_deferred.AddDesc(3, base->heap->GetHeapSRV(),7,false);
+        p_deferred.AddDesc(3, base->heap->GetHeapSRV(),8,false);
 
         cmd.AddPass(&p_deferred);
     }
     {
         //input :GBufferRT,AO,ImageRT
         //output :SwapChianImage
-        p_post.Init(base);
+        rt_post0.Init(base);
+        rt_post0.Setup(base->heap, 8, 7, false);
+
         CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
         ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 5, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
@@ -153,19 +159,43 @@ void SkApp::Setup()
         rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
         rootParameters[1].InitAsConstantBufferView(0);
         rootParameters[2].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+        
+        // rt_post1.Init(base);
+        p_post0.Init(base);
+        p_post0.CreateRoot(&rootParameters, &rt_post0);
+        p_post0.CreatePipeline(model.inputDescs, L"shader/Post0.hlsl");
+        p_post0.AddDesc(0, base->heap->GetHeapSRV(), 2);
+        p_post0.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+        p_post0.AddDesc(2, base->heap->GetHeapSRV(), 8, false);
 
-        rt_post.Init(base);
-        p_post.CreateRoot(&rootParameters, &rt_post);
-        p_post.CreatePipeline(model.inputDescs, L"shader/Post.hlsl");
-        p_post.AddDesc(0, base->heap->GetHeapSRV(), 2);
-        p_post.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
-        p_post.AddDesc(2, base->heap->GetHeapSRV(), 7, false);
-
-        cmd.AddPass(&p_post);
+        cmd.AddPass(&p_post0);
     }
     {
-        p_aa.Init(base, &rt_gbuffer, &rt_deferred);
-        p_aa.Setup(base->heap, 7);
+        rt_post1.Init(base);
+
+        CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 5, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+
+        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{3};
+        rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+        rootParameters[1].InitAsConstantBufferView(0);
+        rootParameters[2].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+        
+        
+        p_post1.Init(base);
+        p_post1.CreateRoot(&rootParameters, &rt_post1);
+        p_post1.CreatePipeline(model.inputDescs, L"shader/Post1.hlsl");
+        p_post1.AddDesc(0, base->heap->GetHeapSRV(), 2);
+        p_post1.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+        p_post1.AddDesc(2, base->heap->GetHeapSRV(), 7, false);
+
+        cmd.AddPass(&p_post1);
+      
+    }
+    {
+        p_aa.Init(base, &rt_gbuffer, &rt_post0);
+        p_aa.Setup(base->heap, 8);
         cmd.AddPass(&p_aa);
     }
     // cmd.AddMesh(&model.mesh);
