@@ -59,7 +59,7 @@ PSOutput PSMain(PSInput input)
         return p;
     }
     float3 _nor = normal.Sample(g_sampler,uv).xyz;
-    float radius=1.5;
+    float radius=3.0;
     uint size=3;
     uint count=size*size*size;
     float weight=0.0;
@@ -68,7 +68,8 @@ PSOutput PSMain(PSInput input)
         float3 pos=pos_depth.xyz;
         int3 signs=sign(pos);
         int bias=dot(signs+2,int3(1,2,3));
-        float3 _noise=noise3(i,size,pos);
+        // float3 _noise=noise3(i,size,pos);
+        float3 _noise=noise3(i,size,float3(i+1,i-1,i));
         pos+=  radius*_noise*dot(_noise,_nor);
         float4 v_pos=mul(float4(pos,1.0),buf.view);
         float depth=-v_pos.z;
@@ -82,7 +83,7 @@ PSOutput PSMain(PSInput input)
             weight+=0.0;
             continue;
         }
-        float rangeCheck = smoothstep(  radius ,radius*0.8, abs(depth - cur_depth));
+        float rangeCheck = smoothstep(  0.0 ,1.0,radius/abs(depth - cur_depth));
         weight += (depth >= cur_depth ? 1.0 : 0.0) * rangeCheck;   
     }
 

@@ -69,24 +69,24 @@ PSOutput PSMain(PSInput input)
         preUV=GetUV(buf.preView,buf.preProj,gBufPos.xyz);
     }
 
-   
     float4 preColor=preImage.Sample(g_sampler, preUV);
-
-    float3 minColor=RGBToYCoCg(curColor.xyz);
-	float3 maxColor=minColor;
-	for(int u=-1;u<=1;u++)
-	{
-		for(int v=-1;v<=1;v++)
-		{
-			float3 data=RGBToYCoCg(rt_deferred.Sample(g_sampler,inUV+float2(u,v)*w).xyz);
-			minColor=min(data,minColor);
-			maxColor=max(data,maxColor);
-		}
-	}
-    preColor.xyz=RGBToYCoCg(preColor.xyz);
-	preColor.xyz=clamp(preColor.xyz,minColor,maxColor);
-	preColor.xyz=YCoCgToRGB(preColor.xyz);
-
+    if(deltaTime<buf.delta)
+    {
+        float3 minColor=RGBToYCoCg(curColor.xyz);
+        float3 maxColor=minColor;
+        for(int u=-1;u<=1;u++)
+        {
+            for(int v=-1;v<=1;v++)
+            {
+                float3 data=RGBToYCoCg(rt_deferred.Sample(g_sampler,inUV+float2(u,v)*w).xyz);
+                minColor=min(data,minColor);
+                maxColor=max(data,maxColor);
+            }
+        }
+        preColor.xyz=RGBToYCoCg(preColor.xyz);
+        preColor.xyz=clamp(preColor.xyz,minColor,maxColor);
+        preColor.xyz=YCoCgToRGB(preColor.xyz);
+    }
     p.rt0 = lerp(curColor,preColor,0.98);
 
     return p;

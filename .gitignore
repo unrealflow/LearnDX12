@@ -28,6 +28,7 @@
 
 # Executables
 *.exe
+*.exe.manifest
 *.out
 *.app
 

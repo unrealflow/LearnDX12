@@ -91,19 +91,19 @@ void SkApp::Setup()
         rt_AO.Init(base);
         rt_AO.Setup(base->heap, 6, 5, false);
 
-        p_AO.Init(base);
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-        std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{2};
-        rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-        rootParameters[1].InitAsConstantBufferView(0);
+        // p_AO.Init(base);
+        // CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+        // ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        // std::vector<CD3DX12_ROOT_PARAMETER1> rootParameters{2};
+        // rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+        // rootParameters[1].InitAsConstantBufferView(0);
 
-        p_AO.CreateRoot(&rootParameters, &rt_AO);
-        p_AO.CreatePipeline(model.inputDescs, L"shader/AO.hlsl");
-        p_AO.AddDesc(0, base->heap->GetHeapSRV(), 2);
-        p_AO.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
+        // p_AO.CreateRoot(&rootParameters, &rt_AO);
+        // p_AO.CreatePipeline(model.inputDescs, L"shader/AO.hlsl");
+        // p_AO.AddDesc(0, base->heap->GetHeapSRV(), 2);
+        // p_AO.AddDesc(1, con.uniBuf.buf->GetGPUVirtualAddress());
 
-        cmd.AddPass(&p_AO);
+        // cmd.AddPass(&p_AO);
     }
     {
         // p_blur.Init(base);

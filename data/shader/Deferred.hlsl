@@ -80,9 +80,8 @@ float4 Render(float4 albedo,float4 normal,float2 uv)
     float3 _nor = normal.xyz;
     uint meshID=uint(normal.w);
     float3 _pos = position.Sample(g_sampler, uv).xyz;
-    // float ao=GetAO(uv);
-    // float ao=AO.Sample(g_sampler,uv);
-    // albedo.xyz*=ao;
+    //float ao=AO.Sample(g_sampler,uv);
+    //albedo.xyz*=ao;
     float3 viewDir=normalize(buf.camPos-_pos);
     float3 lightDir=lightPos-_pos;
     float lightDis=length(lightDir);
@@ -113,6 +112,6 @@ PSOutput PSMain(PSInput input,uint ID:SV_PrimitiveID)
     float4 _albedo = albedo.Sample(g_sampler, curUV);
     float4 _nor=normal.Sample(g_sampler,curUV);
     float4 color=Render(_albedo,_nor,curUV);
-     p.rt0=color;
+    p.rt0=color;
     return p;
 }
